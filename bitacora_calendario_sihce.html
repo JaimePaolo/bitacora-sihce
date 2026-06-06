@@ -1,0 +1,2321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitácora SIHCE — Calendario de Capacitaciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root {
+  --navy: #0c2340;
+  --navy2: #163460;
+  --blue: #1a5fa8;
+  --blue-l: #2e7ed6;
+  --sky: #e8f4fd;
+  --sky2: #cce4f7;
+  --teal: #0d7377;
+  --teal-l: #e0f5f5;
+  --gold: #c8962a;
+  --gold-l: #fef3dc;
+  --green: #0a6b3e;
+  --green-l: #e0f5ea;
+  --red: #a32020;
+  --red-l: #fdeaea;
+  --amber: #8a5c00;
+  --amber-l: #fff4d6;
+  --gray: #4a5568;
+  --gray-l: #f7f8fa;
+  --border: #e2e8f0;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 4px rgba(12,35,64,0.08);
+  --shadow: 0 4px 20px rgba(12,35,64,0.12);
+  --shadow-lg: 0 12px 40px rgba(12,35,64,0.18);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: #eef2f8;
+  color: var(--gray);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--navy);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 400;
+  box-shadow: 0 2px 16px rgba(12,35,64,0.35);
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.brand-badge {
+  background: var(--gold);
+  color: var(--navy);
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  letter-spacing: 1px;
+}
+.brand-text h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  color: white;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.brand-text p {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+.topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn:active { transform: scale(.97); }
+.btn-ghost { background: rgba(255,255,255,.1); color: white; border: 1px solid rgba(255,255,255,.2); }
+.btn-ghost:hover { background: rgba(255,255,255,.18); }
+.btn-gold { background: var(--gold); color: var(--navy); font-weight: 600; }
+.btn-gold:hover { background: #b8851f; }
+.btn-primary { background: var(--blue); color: white; }
+.btn-primary:hover { background: var(--navy2); }
+.btn-success { background: var(--green); color: white; }
+.btn-success:hover { background: #085032; }
+.btn-outline { background: white; color: var(--navy); border: 1.5px solid var(--border); }
+.btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+.btn-danger { background: var(--red-l); color: var(--red); border: 1px solid #fca5a5; }
+.btn-danger:hover { background: #fecaca; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon {
+  width: 32px; height: 32px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--gray);
+  cursor: pointer;
+  transition: all .15s;
+  font-size: 16px;
+}
+.btn-icon:hover { background: var(--sky); color: var(--blue); border-color: var(--blue); }
+.btn-icon.del:hover { background: var(--red-l); color: var(--red); border-color: #fca5a5; }
+
+/* ── LAYOUT ── */
+.app-layout {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 60px);
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: white;
+  border-right: 1px solid var(--border);
+  padding: 22px 18px;
+  overflow-y: auto;
+  height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-section { margin-bottom: 24px; }
+.sidebar-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--blue);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid var(--sky2);
+}
+
+/* mini-calendar en sidebar */
+.mini-cal { width: 100%; }
+.mini-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.mini-cal-nav .month-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  color: var(--navy);
+  font-weight: 600;
+}
+.mini-cal-nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--blue);
+  font-size: 18px;
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.mini-cal-nav button:hover { background: var(--sky); }
+.mini-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.mini-cal-grid .day-name {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--blue);
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+.mini-day {
+  text-align: center;
+  font-size: 12px;
+  padding: 5px 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .12s;
+  position: relative;
+  color: var(--gray);
+}
+.mini-day:hover { background: var(--sky); color: var(--blue); }
+.mini-day.today { background: var(--navy); color: white; font-weight: 600; }
+.mini-day.selected { background: var(--blue); color: white; }
+.mini-day.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.mini-day.has-event.selected::after,
+.mini-day.has-event.today::after { background: white; }
+.mini-day.other-month { color: #cbd5e0; }
+.mini-day.other-month:hover { background: none; color: #a0aec0; }
+
+/* Stats en sidebar */
+.stat-chips { display: flex; flex-direction: column; gap: 8px; }
+.stat-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--gray-l);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.stat-chip .lbl { font-size: 12px; color: var(--gray); display: flex; align-items: center; gap: 6px; }
+.stat-chip .val { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--navy); font-weight: 700; }
+
+/* Recomendaciones sidebar */
+.rec-item {
+  display: flex;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--sky);
+  border-left: 3px solid var(--blue);
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #2d3748;
+}
+.rec-item .ti { color: var(--blue); font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── MAIN CONTENT ── */
+.main-content { padding: 24px 28px; overflow-y: auto; }
+
+/* ── CALENDAR VIEW ── */
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cal-header-left { display: flex; align-items: center; gap: 14px; }
+.cal-nav-btn {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--gray);
+  transition: all .15s;
+}
+.cal-nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+.cal-month-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  color: var(--navy);
+  font-weight: 700;
+}
+.view-tabs {
+  display: flex;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.view-tab {
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--gray);
+  transition: all .15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.view-tab.active { background: var(--navy); color: white; }
+
+/* ── MONTH GRID ── */
+.cal-grid-wrap { background: white; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm); }
+.cal-day-names {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--navy);
+}
+.cal-day-name {
+  text-align: center;
+  padding: 10px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+.cal-cell {
+  min-height: 120px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 8px;
+  cursor: pointer;
+  transition: background .12s;
+  position: relative;
+}
+.cal-cell:nth-child(7n) { border-right: none; }
+.cal-cell:hover { background: #f0f6ff; }
+.cal-cell.today { background: #f0f6ff; }
+.cal-cell.today .cal-day-num { background: var(--navy); color: white; }
+.cal-cell.selected { background: var(--sky); }
+.cal-cell.other-month { background: #fafafa; opacity: .55; }
+.cal-day-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+.cal-event-pill {
+  font-size: 10.5px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: opacity .12s;
+  font-weight: 500;
+  line-height: 1.3;
+  word-break: break-word;
+}
+.cal-event-pill:hover { opacity: .8; }
+.pill-presencial { background: #dbeafe; color: #1e40af; }
+.pill-virtual { background: #d1fae5; color: #065f46; }
+.pill-hibrida { background: #fef3c7; color: #92400e; }
+.cal-more {
+  font-size: 10px;
+  color: var(--blue);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 1px 4px;
+}
+
+/* ── LIST VIEW ── */
+.list-view { display: none; }
+.list-event {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: box-shadow .15s, border-color .15s;
+  box-shadow: var(--shadow-sm);
+}
+.list-event:hover { box-shadow: var(--shadow); border-color: var(--blue-l); }
+.list-event .ev-check { width: 18px; height: 18px; cursor: pointer; accent-color: var(--blue); }
+.list-event-date {
+  text-align: center;
+  background: var(--navy);
+  color: white;
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 56px;
+  flex-shrink: 0;
+}
+.list-event-date .d { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; line-height: 1; }
+.list-event-date .m { font-size: 11px; text-transform: uppercase; opacity: .75; letter-spacing: 0.5px; }
+.list-event-info { flex: 1; }
+.list-event-title { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 5px; }
+.list-event-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--gray); margin-bottom: 8px; }
+.list-event-meta span { display: flex; align-items: center; gap: 5px; }
+.list-event-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── MODAL ── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(12,35,64,.5);
+  z-index: 600;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 30px 16px;
+  overflow-y: auto;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: white;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: var(--shadow-lg);
+  animation: popIn .2s ease;
+  margin: auto;
+}
+@keyframes popIn { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-head {
+  background: var(--navy);
+  color: white;
+  padding: 20px 26px;
+  border-radius: 18px 18px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-head h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.modal-close { background: rgba(255,255,255,.12); border: none; color: white; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.modal-close:hover { background: rgba(255,255,255,.22); }
+.modal-body { padding: 26px; }
+.modal-foot { padding: 16px 26px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* ── FORM ── */
+.form-grid { display: grid; gap: 14px; }
+.form-grid-2 { grid-template-columns: 1fr 1fr; }
+.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg label { font-size: 11.5px; font-weight: 600; color: var(--navy); text-transform: uppercase; letter-spacing: .5px; }
+.fg input, .fg select, .fg textarea {
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13.5px;
+  color: var(--navy);
+  background: #fafbfd;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  border-color: var(--blue);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(26,95,168,.1);
+}
+.fg textarea { resize: vertical; min-height: 72px; }
+.fg-full { grid-column: 1 / -1; }
+.req { color: var(--red); margin-left: 2px; }
+
+/* Tabs in modal */
+.modal-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; gap: 2px; }
+.modal-tab {
+  padding: 9px 18px;
+  border: none;
+  background: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 7px;
+}
+.modal-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+.modal-tab-pane { display: none; }
+.modal-tab-pane.active { display: block; }
+
+/* Participantes tabla */
+.part-table-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-top: 10px; }
+.part-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.part-table th { background: var(--navy); color: white; padding: 9px 12px; text-align: left; font-weight: 500; font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; }
+.part-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.part-table tr:last-child td { border-bottom: none; }
+.part-table tr:hover td { background: #f8faff; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--sky); color: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.cell-name { display: flex; align-items: center; gap: 8px; }
+.chip { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+.chip-blue { background: #dbeafe; color: #1e40af; }
+.chip-green { background: #d1fae5; color: #065f46; }
+.chip-amber { background: #fef3c7; color: #92400e; }
+.chip-red { background: #fee2e2; color: #991b1b; }
+.chip-gray { background: #f3f4f6; color: #4b5563; }
+.chip-teal { background: var(--teal-l); color: var(--teal); }
+
+/* Evidencias */
+.upload-zone {
+  border: 2px dashed var(--blue-l);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+  background: var(--sky);
+  cursor: pointer;
+  transition: all .2s;
+  margin-bottom: 14px;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--blue); background: #dbeafe; }
+.upload-zone .ti { font-size: 36px; color: var(--blue); margin-bottom: 8px; display: block; }
+.upload-zone p { font-size: 13px; color: var(--gray); margin-bottom: 4px; }
+.upload-zone small { font-size: 11px; color: #9ca3af; }
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.media-thumb {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 1;
+  border: 1.5px solid var(--border);
+  background: #f8f9fa;
+}
+.media-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-thumb .vid-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(12,35,64,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 28px;
+}
+.media-thumb .del-media {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(163,32,32,.85);
+  border: none;
+  color: white;
+  border-radius: 5px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.media-thumb:hover .del-media { opacity: 1; }
+.media-caption { padding: 4px 6px; font-size: 10px; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: white; }
+
+/* Lightbox */
+.lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 900; align-items: center; justify-content: center; }
+.lightbox.open { display: flex; }
+.lightbox img, .lightbox video { max-width: 90vw; max-height: 88vh; border-radius: 10px; object-fit: contain; }
+.lightbox-close { position: fixed; top: 18px; right: 22px; background: rgba(255,255,255,.15); border: none; color: white; font-size: 24px; width: 42px; height: 42px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* Acta preview */
+.acta-doc { font-family: 'Outfit', sans-serif; font-size: 12.5px; line-height: 1.7; color: #1a202c; }
+.acta-doc .hdr { text-align: center; padding-bottom: 14px; border-bottom: 2.5px solid var(--navy); margin-bottom: 16px; }
+.acta-doc .hdr h1 { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--navy); text-transform: uppercase; letter-spacing: 1.5px; }
+.acta-doc .hdr p { font-size: 11px; color: #718096; margin-top: 3px; }
+.acta-doc .doc-title { text-align: center; margin: 12px 0 18px; }
+.acta-doc .doc-title h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--navy); text-transform: uppercase; letter-spacing: 3px; }
+.acta-doc .doc-title .acta-num { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+.acta-doc .meta-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; background: var(--sky); border: 1px solid var(--sky2); border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; }
+.acta-doc .meta-box .mitem { font-size: 12px; }
+.acta-doc .meta-box .mitem strong { color: var(--navy); }
+.acta-doc .sec-hd { font-size: 11.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--sky2); padding-bottom: 5px; }
+.acta-doc table.at { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.acta-doc table.at th { background: var(--navy); color: white; padding: 7px 10px; font-weight: 500; text-align: left; }
+.acta-doc table.at td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; }
+.acta-doc table.at tr:nth-child(even) td { background: #f7f8fa; }
+.acta-doc .firmas { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 36px; }
+.acta-doc .firma-box { text-align: center; border-top: 1.5px solid #374151; padding-top: 8px; font-size: 11px; color: #4a5568; }
+.acta-doc .firma-box strong { font-size: 12px; color: var(--navy); display: block; }
+
+/* Toast */
+.toast-stack { position: fixed; bottom: 22px; right: 22px; z-index: 800; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: white; border-radius: 10px; padding: 12px 18px; box-shadow: 0 6px 24px rgba(0,0,0,.15); border-left: 4px solid; font-size: 13px; display: flex; align-items: center; gap: 10px; animation: tIn .2s ease, tOut .3s 2.7s ease forwards; min-width: 270px; }
+.toast.ok { border-color: #059669; }
+.toast.err { border-color: #dc2626; }
+.toast.inf { border-color: var(--blue); }
+@keyframes tIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+@keyframes tOut { to { opacity: 0; pointer-events: none; } }
+
+/* Empty state */
+.empty-cal { text-align: center; padding: 52px 20px; color: #9ca3af; }
+.empty-cal i { font-size: 52px; display: block; margin-bottom: 12px; }
+.empty-cal p { font-size: 14px; margin-bottom: 16px; }
+
+/* Badge count */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--blue);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  padding: 0 5px;
+}
+
+/* Participant add row */
+.part-add-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.part-add-row input, .part-add-row select {
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  outline: none;
+  background: white;
+}
+.part-add-row input:focus, .part-add-row select:focus { border-color: var(--blue); }
+
+@media (max-width: 900px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .sidebar { height: auto; position: static; }
+  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+  .acta-doc .meta-box, .acta-doc .firmas { grid-template-columns: 1fr; }
+  .part-add-row { grid-template-columns: 1fr 1fr; }
+}
+/* ── LOGIN OVERLAY ── */
+.login-overlay { position:fixed;inset:0;z-index:999;background:rgba(12,35,64,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center; }
+.login-overlay.open { display:flex; }
+.login-overlay:not(.open) { display:none; }
+.login-card { background:#fff;border-radius:18px;padding:36px 32px;width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(12,35,64,0.3);text-align:center; }
+.login-card h1 { font-family:'Playfair Display',serif;font-size:22px;color:var(--navy);margin-bottom:2px; }
+.login-card .sub { font-size:13px;color:var(--gray);margin-bottom:22px; }
+.login-card input[type=password] { width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;outline:none;text-align:center;font-family:'Outfit',sans-serif;transition:border-color .2s; }
+.login-card input[type=password]:focus { border-color:var(--blue); }
+.login-card .login-err { color:var(--red);font-size:12px;display:none;margin-bottom:8px; }
+.login-card .login-warn { font-size:11px;color:#9ca3af;margin-top:14px;display:none;line-height:1.5; }
+.login-card .login-btn { width:100%;padding:11px;border:none;border-radius:10px;background:var(--navy);color:#fff;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s;margin-top:4px; }
+.login-card .login-btn:hover { background:var(--navy2); }
+.login-card .login-btn:disabled { opacity:.6;cursor:not-allowed; }
+.login-card .login-lock { font-size:48px;margin-bottom:8px; }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay open" id="overlay-login">
+  <div class="login-card">
+    <div class="login-lock">🔐</div>
+    <h1>Bitácora SIHCE</h1>
+    <p class="sub" id="login-subtitle">Ingresa tu contraseña para acceder</p>
+    <input type="password" id="login-password" placeholder="Contraseña" autofocus onkeydown="if(event.key==='Enter')handleLogin()">
+    <p class="login-err" id="login-error">Contraseña incorrecta</p>
+    <button class="login-btn" id="login-btn" onclick="handleLogin()">Ingresar</button>
+    <p class="login-warn" id="login-warning">⚠️ Si pierdes la contraseña, los datos guardados no podrán recuperarse.</p>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-badge">SIHCE</div>
+    <div class="brand-text">
+      <h1>Bitácora de Capacitaciones</h1>
+      <p>Sistema Integrado de Historia Clínica Electrónica</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost" onclick="exportCSV()"><i class="ti ti-table-export"></i> CSV</button>
+    <button class="btn btn-ghost" onclick="abrirActaModal()"><i class="ti ti-file-certificate"></i> Acta PDF</button>
+    <button class="btn btn-gold" onclick="abrirNuevoEvento()"><i class="ti ti-plus"></i> Nueva Capacitación</button>
+  </div>
+</div>
+
+<!-- APP LAYOUT -->
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <!-- Mini calendario -->
+    <div class="sidebar-section">
+      <div class="sidebar-label"><i class="ti ti-calendar"></i> Navegación</div>
+      <div class="mini-cal">
+        <div class="mini-cal-nav">
+          <button onclick="navMiniCal(-1)"><i class="ti ti-chevron-left"></i></button>
+          <span class="month-name" id="mini-month-name"></span>
+          <button onclick="navMiniCal(1)"><i class="ti ti-chevron-right"></i></button>
+        </div>
+        <div class="mini-cal-grid" id="mini-cal-grid"></div>
+      </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="sidebar-section">
+      <div class="sidebar-label"><i class="ti ti-chart-bar"></i> Resumen General</div>
+      <div class="stat-chips">
+        <div class="stat-chip">
+          <span class="lbl"><i class="ti ti-calendar-event" style="color:var(--blue)"></i> Sesiones</span>
+          <span class="val" id="stat-sesiones">0</span>
+        </div>
+        <div class="stat-chip">
+          <span class="lbl"><i class="ti ti-users" style="color:var(--teal)"></i> Participantes</span>
+          <span class="val" id="stat-participantes">0</span>
+        </div>
+        <div class="stat-chip">
+          <span class="lbl"><i class="ti ti-circle-check" style="color:var(--green)"></i> Asistieron</span>
+          <span class="val" id="stat-asistieron">0</span>
+        </div>
+        <div class="stat-chip">
+          <span class="lbl"><i class="ti ti-photo" style="color:var(--gold)"></i> Evidencias</span>
+          <span class="val" id="stat-evidencias">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="sidebar-section">
+      <div class="sidebar-label"><i class="ti ti-bulb"></i> Recomendaciones</div>
+      <div class="rec-item"><i class="ti ti-users-group"></i>Limitar grupos a 20 profesionales para asegurar aprendizaje efectivo y atención personalizada.</div>
+      <div class="rec-item"><i class="ti ti-clock"></i>Programar 6 horas académicas mínimas: 2h teoría, 3h práctica, 1h evaluación.</div>
+      <div class="rec-item"><i class="ti ti-device-laptop"></i>Verificar acceso al sistema y credenciales SIHCE antes de iniciar la sesión.</div>
+      <div class="rec-item"><i class="ti ti-photo"></i>Capturar evidencia fotográfica y/o videográfica al inicio, durante y al cierre de la sesión.</div>
+      <div class="rec-item"><i class="ti ti-certificate"></i>Emitir certificado solo a quienes cumplan mínimo 90% de asistencia efectiva.</div>
+      <div class="rec-item"><i class="ti ti-checklist"></i>Registrar asistencia con firma física al inicio y fin de la sesión.</div>
+      <div class="rec-item"><i class="ti ti-chart-bar"></i>Aplicar encuesta de satisfacción (NPS) al concluir cada sesión.</div>
+      <div class="rec-item"><i class="ti ti-shield-check"></i>Reforzar normas de confidencialidad y acceso seguro al SIHCE.</div>
+      <div class="rec-item"><i class="ti ti-phone"></i>Designar soporte técnico de 1.ª línea en cada establecimiento post-capacitación.</div>
+      <div class="rec-item"><i class="ti ti-refresh"></i>Programar sesión de refuerzo a los 15–30 días del primer uso real.</div>
+      <div class="rec-item"><i class="ti ti-map-pin"></i>Considerar traslados y disponibilidad horaria del personal antes de fijar fechas.</div>
+      <div class="rec-item"><i class="ti ti-file-text"></i>Archivar el acta firmada en físico y en el sistema de gestión documental institucional.</div>
+    </div>
+    <div class="sidebar-section" style="margin-top:auto;padding-top:12px;border-top:1px solid var(--border);">
+      <button class="btn btn-outline btn-sm" style="width:100%;" onclick="cerrarSesion()"><i class="ti ti-logout"></i> Cerrar Sesión</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <div class="cal-header">
+      <div class="cal-header-left">
+        <button class="cal-nav-btn" onclick="navMain(-1)"><i class="ti ti-chevron-left"></i></button>
+        <div class="cal-month-title" id="main-month-title"></div>
+        <button class="cal-nav-btn" onclick="navMain(1)"><i class="ti ti-chevron-right"></i></button>
+        <button class="btn btn-outline btn-sm" onclick="irHoy()"><i class="ti ti-calendar-today"></i> Hoy</button>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="text" id="search-cal" placeholder="Buscar capacitación..." style="padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;outline:none;width:200px;" oninput="renderAll()">
+        <div class="view-tabs">
+          <button class="view-tab active" id="vt-month" onclick="setView('month')"><i class="ti ti-calendar-month"></i> Mes</button>
+          <button class="view-tab" id="vt-list" onclick="setView('list')"><i class="ti ti-list"></i> Lista</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTH VIEW -->
+    <div id="view-month">
+      <div class="cal-grid-wrap">
+        <div class="cal-day-names">
+          <div class="cal-day-name">Lun</div><div class="cal-day-name">Mar</div>
+          <div class="cal-day-name">Mié</div><div class="cal-day-name">Jue</div>
+          <div class="cal-day-name">Vie</div><div class="cal-day-name">Sáb</div>
+          <div class="cal-day-name">Dom</div>
+        </div>
+        <div class="cal-days" id="cal-days"></div>
+      </div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div id="view-list" class="list-view">
+      <div id="list-toolbar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:white;border-radius:10px;border:1px solid var(--border);">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="select-all" onchange="toggleSelectAll()"> <strong style="color:var(--navy)">Seleccionar todos</strong>
+        </label>
+        <span style="color:#9ca3af;font-size:12px;" id="sel-count">0 seleccionados</span>
+        <button class="btn btn-success btn-sm" onclick="actaSeleccionados()" id="btn-acta-sel" disabled><i class="ti ti-file-certificate"></i> Acta seleccionados</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarSeleccionados()" id="btn-del-sel" disabled><i class="ti ti-trash"></i> Eliminar seleccionados</button>
+      </div>
+      <div id="list-events"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL: NUEVA / EDITAR CAPACITACIÓN
+═══════════════════════════════════════ -->
+<div class="overlay" id="overlay-evento">
+  <div class="modal" style="max-width:860px;">
+    <div class="modal-head">
+      <h2 id="ev-modal-title"><i class="ti ti-calendar-plus"></i> Nueva Capacitación</h2>
+      <button class="modal-close" onclick="cerrarModal('overlay-evento')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="modal-tab active" onclick="switchMTab('info')" id="mtt-info"><i class="ti ti-info-circle"></i> Información</button>
+        <button class="modal-tab" onclick="switchMTab('participantes')" id="mtt-participantes"><i class="ti ti-users"></i> Participantes <span class="count-badge" id="badge-part">0</span></button>
+        <button class="modal-tab" onclick="switchMTab('contenido')" id="mtt-contenido"><i class="ti ti-book"></i> Contenido</button>
+        <button class="modal-tab" onclick="switchMTab('evidencias')" id="mtt-evidencias"><i class="ti ti-photo"></i> Evidencias <span class="count-badge" id="badge-ev">0</span></button>
+      </div>
+
+      <!-- TAB: INFO -->
+      <div class="modal-tab-pane active" id="mtp-info">
+        <div class="form-grid form-grid-2">
+          <div class="fg fg-full">
+            <label>Título de la Capacitación <span class="req">*</span></label>
+            <input type="text" id="ev-titulo" placeholder="Ej: Capacitación SIHCE — Módulo de Historia Clínica">
+          </div>
+          <div class="fg">
+            <label>Fecha inicio <span class="req">*</span></label>
+            <input type="date" id="ev-fecha-ini" oninput="syncFechaFin()">
+          </div>
+          <div class="fg">
+            <label>Fecha fin <span class="req">*</span></label>
+            <input type="date" id="ev-fecha-fin">
+          </div>
+          <div class="fg fg-full" id="dias-seleccionados-wrap" style="display:none;">
+            <div id="dias-seleccionados" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;background:var(--sky);border:1px solid var(--sky2);border-radius:8px;font-size:12px;color:var(--navy);"></div>
+          </div>
+          <div class="fg">
+            <label>Modalidad</label>
+            <select id="ev-modalidad">
+              <option value="presencial">Presencial</option>
+              <option value="virtual">Virtual (Zoom / Teams)</option>
+              <option value="hibrida">Híbrida</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Hora inicio</label>
+            <input type="time" id="ev-hora-ini" value="08:00">
+          </div>
+          <div class="fg">
+            <label>Hora fin</label>
+            <input type="time" id="ev-hora-fin" value="17:00">
+          </div>
+          <div class="fg fg-full">
+            <label>Lugar / Ambiente</label>
+            <input type="text" id="ev-lugar" placeholder="Ej: Sala de Reuniones — Hospital Regional Docente">
+          </div>
+          <div class="fg fg-full">
+            <label>Establecimiento / Red / DIRESA</label>
+            <input type="text" id="ev-estab" placeholder="Ej: Hospital Regional Docente de Trujillo — Red Trujillo — DIRESA La Libertad">
+          </div>
+          <div class="fg">
+            <label>Capacitador(es)</label>
+            <textarea id="ev-capacitador" placeholder="Apellidos y Nombres (uno por línea si son varios)" style="min-height:54px;"></textarea>
+          </div>
+          <div class="fg">
+            <label>Cargo / Institución del Capacitador</label>
+            <input type="text" id="ev-cap-cargo" placeholder="Ej: Ingeniero OGTI — MINSA">
+          </div>
+          <div class="fg">
+            <label>Responsable de Estadística UNGETs</label>
+            <input type="text" id="ev-coordinador" placeholder="Nombre completo y cargo">
+          </div>
+          <div class="fg">
+            <label>Responsable del Establecimiento</label>
+            <input type="text" id="ev-resp-acta" placeholder="Nombre completo y cargo">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: PARTICIPANTES -->
+      <div class="modal-tab-pane" id="mtp-participantes">
+        <div class="part-add-row">
+          <input type="text" id="p-nombre" placeholder="Apellidos y Nombres *">
+          <input type="text" id="p-doc" placeholder="DNI / N° Doc.">
+          <select id="p-profesion">
+            <option value="">— Profesión —</option>
+            <option>Médico</option><option>Médico Residente</option>
+            <option>Enfermera(o)</option><option>Obstetriz</option>
+            <option>Tecnólogo Médico</option><option>Psicólogo</option>
+            <option>Nutricionista</option><option>Asistente Social</option>
+            <option>Técnico en Enfermería</option>
+            <option>Digitador / Téc. Administrativo</option>
+            <option>Jefe de Servicio</option><option>Director/a</option>
+            <option>Otro</option>
+          </select>
+          <select id="p-estado">
+            <option value="Asistió">Asistió</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Ausente">Ausente</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="agregarParticipante()"><i class="ti ti-plus"></i> Agregar</button>
+        </div>
+        <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="text" id="p-servicio-input" placeholder="Servicio / Área" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;outline:none;flex:1;min-width:140px;">
+          <input type="email" id="p-email-input" placeholder="Correo electrónico" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;outline:none;flex:1;min-width:180px;">
+          <input type="tel" id="p-celular-input" placeholder="Celular" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;outline:none;flex:0 1 140px;">
+        </div>
+        <div class="part-table-wrap">
+          <table class="part-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Nombre</th><th>Documento</th>
+                <th>Profesión</th><th>Servicio</th><th>Celular</th><th>Estado</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="part-tbody">
+              <tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px;font-size:13px;">Sin participantes. Agrega usando el formulario superior.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: CONTENIDO -->
+      <div class="modal-tab-pane" id="mtp-contenido">
+        <div class="form-grid">
+          <div class="fg">
+            <label>Objetivos de la Capacitación</label>
+            <textarea id="ev-objetivos" placeholder="Al finalizar la sesión el participante será capaz de..."></textarea>
+          </div>
+          <div class="fg">
+            <label>Módulos / Temas tratados</label>
+            <textarea id="ev-temas" placeholder="1. Acceso y navegación del SIHCE&#10;2. Registro de historia clínica&#10;3. Consulta de atenciones previas&#10;4. Generación de reportes"></textarea>
+          </div>
+          <div class="fg">
+            <label>Metodología utilizada</label>
+            <textarea id="ev-metodologia" placeholder="Exposición magistral, demostración práctica, ejercicios guiados en sistema real..."></textarea>
+          </div>
+          <div class="fg">
+            <label>Compromisos y Acuerdos</label>
+            <textarea id="ev-compromisos" placeholder="Los participantes se comprometen a usar el SIHCE a partir de la fecha..."></textarea>
+          </div>
+          <div class="fg">
+            <label>Observaciones generales</label>
+            <textarea id="ev-obs" placeholder="Incidencias, problemas técnicos, comentarios..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: EVIDENCIAS -->
+      <div class="modal-tab-pane" id="mtp-evidencias">
+        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="e=>e.preventDefault()" ondrop="handleDrop(event)" ondragenter="this.classList.add('drag')" ondragleave="this.classList.remove('drag')">
+          <i class="ti ti-cloud-upload"></i>
+          <p><strong>Haz clic o arrastra archivos aquí</strong></p>
+          <p>Fotos y videos como evidencia de la capacitación</p>
+          <small>JPG, PNG, GIF, MP4, MOV, WEBM · Máx. 50 MB por archivo</small>
+        </div>
+        <input type="file" id="file-input" multiple accept="image/*,video/*" style="display:none" onchange="handleFiles(this.files)">
+        <div class="media-grid" id="media-grid"></div>
+        <p id="ev-media-empty" style="font-size:13px;color:#9ca3af;text-align:center;padding:12px;">No hay evidencias cargadas para esta sesión.</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="cerrarModal('overlay-evento')"><i class="ti ti-x"></i> Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEvento()"><i class="ti ti-check"></i> Guardar Capacitación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     MODAL: VER EVENTO
+═══════════════════════════ -->
+<div class="overlay" id="overlay-ver">
+  <div class="modal" style="max-width:820px;">
+    <div class="modal-head" id="ver-head">
+      <h2 id="ver-titulo"><i class="ti ti-calendar-event"></i> Detalle</h2>
+      <button class="modal-close" onclick="cerrarModal('overlay-ver')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" id="ver-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-sm" onclick="eliminarEventoVer()"><i class="ti ti-trash"></i> Eliminar</button>
+      <button class="btn btn-outline" onclick="editarEventoVer()"><i class="ti ti-pencil"></i> Editar</button>
+      <button class="btn btn-success" onclick="generarActaEvento()"><i class="ti ti-file-certificate"></i> Acta PDF</button>
+      <button class="btn btn-primary" onclick="cerrarModal('overlay-ver')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     MODAL: ACTA GENERAL
+═══════════════════════════ -->
+<div class="overlay" id="overlay-acta">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-head">
+      <h2><i class="ti ti-file-certificate"></i> Vista Previa del Acta de Capacitación</h2>
+      <button class="modal-close" onclick="cerrarModal('overlay-acta')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;" id="acta-selector-wrap">
+        <label style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;">Sesión a exportar:</label>
+        <select id="acta-selector" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;outline:none;" onchange="renderActaPreview()">
+          <option value="all">Todas las sesiones (resumen)</option>
+        </select>
+      </div>
+      <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <label style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;">URL pública (para QR):</label>
+        <input type="url" id="acta-qr-url" placeholder="https://tudominio.github.io/mi-app" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;outline:none;flex:1;min-width:200px;" oninput="guardarUrlQR()">
+      </div>
+      <div style="border:1px solid var(--border);border-radius:10px;padding:24px 28px;background:#fafbfd;max-height:55vh;overflow-y:auto;" id="acta-preview-wrap">
+        <div class="acta-doc" id="acta-preview"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="cerrarModal('overlay-acta')"><i class="ti ti-x"></i> Cerrar</button>
+      <button class="btn btn-success" onclick="exportarPDF()"><i class="ti ti-download"></i> Descargar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <button class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open')"><i class="ti ti-x"></i></button>
+  <div id="lightbox-content"></div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-stack" id="toast-stack"></div>
+
+<script>
+/* ═══════════════════ STATE ═══════════════════ */
+let eventos = [];           // array de capacitaciones
+let currentYear, currentMonth;
+let miniYear, miniMonth;
+let currentView = 'month';
+let editingId = null;
+let verEventoId = null;
+let participantesTemp = [];
+let mediasTemp = [];
+let selectedEventIds = new Set();
+
+/* ═══════════════════ CRYPTO (AES-GCM + PBKDF2) ═══════════════════ */
+let dbKey = null;
+const SALT_KEY = 'sihce_crypto_salt';
+
+function obtenerSalt() {
+  let s = localStorage.getItem(SALT_KEY);
+  if (!s) {
+    s = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+    localStorage.setItem(SALT_KEY, s);
+  }
+  return s;
+}
+
+async function derivarClave(password) {
+  const salt = Uint8Array.from(atob(obtenerSalt()), c => c.charCodeAt(0));
+  const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function cifrarVault(key, data) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(data)));
+  return { iv: btoa(String.fromCharCode(...iv)), data: btoa(String.fromCharCode(...new Uint8Array(enc))) };
+}
+
+async function descifrarVault(key, ivB64, dataB64) {
+  const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+  const raw = Uint8Array.from(atob(dataB64), c => c.charCodeAt(0));
+  const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, raw);
+  return JSON.parse(new TextDecoder().decode(dec));
+}
+
+/* ═══════════════════ INDEXED DB (cifrado) ═══════════════════ */
+const DB_NAME = 'BitacoraSIHCE';
+const DB_VER = 2;
+const DB_STORE = 'vault';
+
+function dbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, DB_VER);
+    r.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (e.oldVersion < 2 && db.objectStoreNames.contains('eventos')) db.deleteObjectStore('eventos');
+      if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, { keyPath: 'id' });
+    };
+    r.onsuccess = e => res(e.target.result);
+    r.onerror = e => rej(e.target.error);
+  });
+}
+
+function dbCargar() {
+  return dbOpen().then(db => new Promise((res, rej) => {
+    const tx = db.transaction(DB_STORE, 'readonly');
+    const r = tx.objectStore(DB_STORE).get('eventos');
+    r.onsuccess = () => { res(r.result); db.close(); };
+    r.onerror = e => { rej(e.target.error); db.close(); };
+  }));
+}
+
+function dbPersistir() {
+  if (!dbKey) return Promise.resolve();
+  return cifrarVault(dbKey, eventos).then(pkg => dbOpen().then(db => new Promise((res, rej) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put({ id: 'eventos', iv: pkg.iv, data: pkg.data });
+    tx.oncomplete = () => { res(); db.close(); };
+    tx.onerror = e => { rej(e.target.error); db.close(); };
+  })));
+}
+
+/* ═══════════════════ LOGIN ═══════════════════ */
+async function handleLogin() {
+  const pw = document.getElementById('login-password').value.trim();
+  if (!pw) return;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  errEl.style.display = 'none';
+  try {
+    const key = await derivarClave(pw);
+    const record = await dbCargar();
+    if (record) {
+      const data = await descifrarVault(key, record.iv, record.data);
+      eventos = data;
+    } else {
+      document.getElementById('login-warning').style.display = 'block';
+    }
+    dbKey = key;
+    document.getElementById('overlay-login').classList.remove('open');
+    document.getElementById('login-password').value = '';
+    renderAll();
+  } catch (e) {
+    errEl.textContent = 'Contraseña incorrecta';
+    errEl.style.display = 'block';
+    document.getElementById('login-password').value = '';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Ingresar';
+  }
+}
+
+function cerrarSesion() {
+  eventos = [];
+  dbKey = null;
+  selectedEventIds.clear();
+  document.getElementById('overlay-login').classList.add('open');
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-password').focus();
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-warning').style.display = 'none';
+  renderAll();
+}
+
+/* ═══════════════════ INIT ═══════════════════ */
+(function init() {
+  const now = new Date();
+  currentYear = miniYear = now.getFullYear();
+  currentMonth = miniMonth = now.getMonth();
+  document.getElementById('ev-fecha-ini').value = now.toISOString().split('T')[0];
+  document.getElementById('ev-fecha-fin').value = now.toISOString().split('T')[0];
+  document.getElementById('overlay-login').classList.add('open');
+  renderAll();
+})();
+
+/* ═══════════════════ UTILS ═══════════════════ */
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function toast(msg, tipo = 'ok') {
+  const icons = { ok: 'ti-circle-check', err: 'ti-alert-circle', inf: 'ti-info-circle' };
+  const clrs = { ok: '#059669', err: '#dc2626', inf: '#1a5fa8' };
+  const el = document.createElement('div');
+  el.className = `toast ${tipo}`;
+  el.innerHTML = `<i class="ti ${icons[tipo]}" style="font-size:20px;color:${clrs[tipo]}"></i><span>${msg}</span>`;
+  document.getElementById('toast-stack').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+function fmt(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-');
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)} ${months[parseInt(m)-1]}. ${y}`;
+}
+function fmtFull(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-');
+  const M = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${parseInt(d)} de ${M[parseInt(m)-1]} de ${y}`;
+}
+function fmtDateRange(fechaIni, fechaFin) {
+  if (!fechaIni) return '—';
+  if (!fechaFin || fechaIni === fechaFin) return fmtFull(fechaIni);
+  const [y1,m1,d1] = fechaIni.split('-');
+  const [y2,m2,d2] = fechaFin.split('-');
+  const M = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  if (y1 === y2 && m1 === m2) {
+    return `${parseInt(d1)} y ${parseInt(d2)} de ${M[parseInt(m1)-1]} de ${y1}`;
+  }
+  return `del ${parseInt(d1)} de ${M[parseInt(m1)-1]} al ${parseInt(d2)} de ${M[parseInt(m2)-1]} de ${y2}`;
+}
+function initials(n) { return n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
+const estadoChip = { 'Asistió':'chip-green','Pendiente':'chip-amber','Ausente':'chip-red' };
+const modalColor = { presencial:'pill-presencial', virtual:'pill-virtual', hibrida:'pill-hibrida' };
+const modalLabel = { presencial:'Presencial', virtual:'Virtual', hibrida:'Híbrida' };
+
+/* ═══════════════════ MULTI-SELECT ═══════════════════ */
+function marcarEvento(id, checked) {
+  if (checked) selectedEventIds.add(id);
+  else selectedEventIds.delete(id);
+  actualizarBarraSeleccion();
+}
+function toggleSelectAll() {
+  const q = document.getElementById('search-cal').value.toLowerCase();
+  const evs = [...eventos].filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.estab||'').toLowerCase().includes(q));
+  if (selectedEventIds.size === evs.filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.estab||'').toLowerCase().includes(q)).length) {
+    selectedEventIds.clear();
+  } else {
+    evs.forEach(e => selectedEventIds.add(e.id));
+  }
+  renderListView();
+  actualizarBarraSeleccion();
+}
+function actualizarBarraSeleccion() {
+  const n = selectedEventIds.size;
+  document.getElementById('sel-count').textContent = n + ' seleccionad' + (n === 1 ? 'o' : 'os');
+  document.getElementById('btn-acta-sel').disabled = n === 0;
+  document.getElementById('btn-del-sel').disabled = n === 0;
+  const allCheck = document.getElementById('select-all');
+  const q = document.getElementById('search-cal').value.toLowerCase();
+  const total = eventos.filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.estab||'').toLowerCase().includes(q)).length;
+  allCheck.checked = n > 0 && n === total;
+  allCheck.indeterminate = n > 0 && n < total;
+}
+function eliminarSeleccionados() {
+  if (!selectedEventIds.size) return;
+  const n = selectedEventIds.size;
+  if (!confirm(`¿Eliminar ${n} capacitac${n === 1 ? 'ión' : 'iones'} seleccionada${n === 1 ? '' : 's'}?`)) return;
+  eventos = eventos.filter(e => !selectedEventIds.has(e.id));
+  selectedEventIds.clear();
+  dbPersistir().catch(() => {});
+  toast(n + ' capacitac' + (n === 1 ? 'ión eliminada' : 'iones eliminadas'), 'inf');
+  renderAll();
+}
+function actaSeleccionados() {
+  if (!selectedEventIds.size) return;
+  const ids = [...selectedEventIds];
+  selectedEventIds.clear();
+  renderListView();
+  abrirActaModal(ids);
+}
+
+/* ═══════════════════ MULTI-DAY HELPERS ═══════════════════ */
+function evtOnDate(e, dateStr) {
+  const ini = e.fechaIni || e.fecha || '';
+  const fin = e.fechaFin || e.fecha || '';
+  return dateStr >= ini && dateStr <= fin;
+}
+function getDatesInRange(ini, fin) {
+  const dates = [];
+  let d = new Date(ini + 'T00:00:00');
+  const end = new Date(fin + 'T00:00:00');
+  while (d <= end) {
+    dates.push(d.toISOString().split('T')[0]);
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
+}
+function syncFechaFin() {
+  const ini = document.getElementById('ev-fecha-ini').value;
+  const fin = document.getElementById('ev-fecha-fin').value;
+  const wrap = document.getElementById('dias-seleccionados-wrap');
+  const cont = document.getElementById('dias-seleccionados');
+  if (ini && fin) {
+    const dias = getDatesInRange(ini, fin);
+    if (dias.length > 1) {
+      wrap.style.display = '';
+      cont.innerHTML = dias.map(d => `<span style="background:var(--blue);color:white;padding:3px 10px;border-radius:20px;font-size:11px;">${d}</span>`).join('');
+    } else {
+      wrap.style.display = 'none';
+    }
+    if (fin < ini) {
+      document.getElementById('ev-fecha-fin').value = ini;
+    }
+  }
+}
+
+/* ═══════════════════ RENDER ALL ═══════════════════ */
+function renderAll() {
+  renderMiniCal();
+  renderMainCal();
+  renderListView();
+  updateStats();
+}
+
+/* ═══════════════════ MINI CAL ═══════════════════ */
+function navMiniCal(dir) {
+  miniMonth += dir;
+  if (miniMonth < 0) { miniMonth = 11; miniYear--; }
+  if (miniMonth > 11) { miniMonth = 0; miniYear++; }
+  renderMiniCal();
+}
+function renderMiniCal() {
+  const M = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('mini-month-name').textContent = `${M[miniMonth]} ${miniYear}`;
+  const grid = document.getElementById('mini-cal-grid');
+  grid.innerHTML = '';
+  ['L','M','X','J','V','S','D'].forEach(d => {
+    const el = document.createElement('div'); el.className = 'day-name'; el.textContent = d;
+    grid.appendChild(el);
+  });
+  const first = new Date(miniYear, miniMonth, 1);
+  const startDow = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(miniYear, miniMonth + 1, 0).getDate();
+  const today = new Date();
+  for (let i = 0; i < startDow; i++) {
+    const el = document.createElement('div'); el.className = 'mini-day other-month';
+    grid.appendChild(el);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const el = document.createElement('div'); el.className = 'mini-day';
+    el.textContent = d;
+    const dateStr = `${miniYear}-${String(miniMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (today.getFullYear()===miniYear && today.getMonth()===miniMonth && today.getDate()===d) el.classList.add('today');
+    if (eventos.some(e => evtOnDate(e, dateStr))) el.classList.add('has-event');
+    el.onclick = () => {
+      currentYear = miniYear; currentMonth = miniMonth;
+      if (currentView === 'list') renderListView();
+      else renderMainCal();
+      document.getElementById('mini-cal-grid').querySelectorAll('.mini-day').forEach(x=>x.classList.remove('selected'));
+      el.classList.add('selected');
+    };
+    grid.appendChild(el);
+  }
+}
+
+/* ═══════════════════ NAV MAIN ═══════════════════ */
+function navMain(dir) {
+  currentMonth += dir;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  miniYear = currentYear; miniMonth = currentMonth;
+  renderAll();
+}
+function irHoy() {
+  const now = new Date();
+  currentYear = miniYear = now.getFullYear();
+  currentMonth = miniMonth = now.getMonth();
+  renderAll();
+}
+function setView(v) {
+  currentView = v;
+  document.getElementById('view-month').style.display = v === 'month' ? '' : 'none';
+  document.getElementById('view-list').style.display = v === 'list' ? '' : 'none';
+  document.getElementById('view-list').className = v === 'list' ? '' : 'list-view';
+  document.getElementById('vt-month').classList.toggle('active', v === 'month');
+  document.getElementById('vt-list').classList.toggle('active', v === 'list');
+}
+
+/* ═══════════════════ MAIN CALENDAR ═══════════════════ */
+function renderMainCal() {
+  const M = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('main-month-title').textContent = `${M[currentMonth]} ${currentYear}`;
+  const grid = document.getElementById('cal-days');
+  grid.innerHTML = '';
+  const first = new Date(currentYear, currentMonth, 1);
+  const startDow = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const today = new Date();
+  const q = document.getElementById('search-cal').value.toLowerCase();
+
+  // prev month filler
+  const prevDays = new Date(currentYear, currentMonth, 0).getDate();
+  for (let i = startDow - 1; i >= 0; i--) {
+    const cell = document.createElement('div'); cell.className = 'cal-cell other-month';
+    cell.innerHTML = `<div class="cal-day-num">${prevDays - i}</div>`;
+    grid.appendChild(cell);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayEvs = eventos.filter(e => evtOnDate(e, dateStr) && (!q || e.titulo.toLowerCase().includes(q) || (e.estab||'').toLowerCase().includes(q)));
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    if (today.getFullYear()===currentYear && today.getMonth()===currentMonth && today.getDate()===d) cell.classList.add('today');
+    cell.innerHTML = `<div class="cal-day-num">${d}</div>`;
+    cell.onclick = () => { abrirNuevoEvento(dateStr); };
+
+    const showMax = 3;
+    dayEvs.slice(0, showMax).forEach(ev => {
+      const pill = document.createElement('div');
+      pill.className = `cal-event-pill ${modalColor[ev.modalidad] || 'pill-presencial'}`;
+      // Show multi-day indicator
+      const isFirst = ev.fechaIni === dateStr;
+      const isLast = ev.fechaFin === dateStr;
+      const multiDay = ev.fechaIni !== ev.fechaFin;
+      const icon = multiDay ? (isFirst ? 'ti-calendar-plus' : isLast ? 'ti-calendar-check' : 'ti-calendar') : 'ti-calendar-event';
+      pill.innerHTML = `<i class="ti ${icon}" style="font-size:11px"></i>${ev.titulo}`;
+      if (multiDay && !isFirst) pill.style.opacity = '0.75';
+      pill.onclick = (e) => { e.stopPropagation(); verEvento(ev.id); };
+      cell.appendChild(pill);
+    });
+    if (dayEvs.length > showMax) {
+      const more = document.createElement('div');
+      more.className = 'cal-more';
+      more.textContent = `+${dayEvs.length - showMax} más`;
+      more.onclick = e => { e.stopPropagation(); setView('list'); renderListView(); };
+      cell.appendChild(more);
+    }
+    grid.appendChild(cell);
+  }
+
+  // next month filler
+  const total = startDow + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remaining; d++) {
+    const cell = document.createElement('div'); cell.className = 'cal-cell other-month';
+    cell.innerHTML = `<div class="cal-day-num">${d}</div>`;
+    grid.appendChild(cell);
+  }
+}
+
+/* ═══════════════════ LIST VIEW ═══════════════════ */
+function renderListView() {
+  const q = document.getElementById('search-cal').value.toLowerCase();
+  const wrap = document.getElementById('list-events');
+  let evs = [...eventos].sort((a,b)=>(a.fechaIni||'').localeCompare(b.fechaIni||''));
+  if (q) evs = evs.filter(e => e.titulo.toLowerCase().includes(q) || (e.estab||'').toLowerCase().includes(q) || (e.capacitador||'').toLowerCase().includes(q));
+  document.getElementById('list-toolbar').style.display = evs.length ? '' : 'none';
+  if (!evs.length) {
+    wrap.innerHTML = `<div class="empty-cal"><i class="ti ti-calendar-off"></i><p>No hay capacitaciones registradas aún.</p><button class="btn btn-primary" onclick="abrirNuevoEvento()"><i class="ti ti-plus"></i> Registrar primera capacitación</button></div>`;
+    return;
+  }
+  const M = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  wrap.innerHTML = evs.map(ev => {
+    const [y,m,d] = (ev.fechaIni||'').split('-');
+    const multiDay = ev.fechaIni !== ev.fechaFin;
+    const [y2,m2,d2] = (ev.fechaFin||ev.fechaIni||'').split('-');
+    const nDays = multiDay ? getDatesInRange(ev.fechaIni, ev.fechaFin).length : 1;
+    const nPart = (ev.participantes||[]).length;
+    const nAsi = (ev.participantes||[]).filter(p=>p.estado==='Asistió').length;
+    const nMed = (ev.medias||[]).length;
+    const dateDisplay = multiDay
+      ? `<div class="d" style="font-size:16px">${parseInt(d)}–${parseInt(d2)}</div><div class="m">${M[parseInt(m)-1]}${m!==m2?'–'+M[parseInt(m2)-1]:''}<br>${y}</div>`
+      : `<div class="d">${parseInt(d)}</div><div class="m">${M[parseInt(m)-1]}<br>${y}</div>`;
+    const checked = selectedEventIds.has(ev.id) ? 'checked' : '';
+    return `<div class="list-event" data-id="${ev.id}">
+      <div style="display:flex;align-items:center;padding-right:6px;" onclick="event.stopPropagation()">
+        <input type="checkbox" class="ev-check" data-id="${ev.id}" ${checked} onchange="marcarEvento('${ev.id}',this.checked)">
+      </div>
+      <div class="list-event-date">${dateDisplay}</div>
+      <div class="list-event-info" onclick="verEvento('${ev.id}')">
+        <div class="list-event-title">${ev.titulo}</div>
+        <div class="list-event-meta">
+          <span><i class="ti ti-clock"></i>${ev.horaIni||'—'} – ${ev.horaFin||'—'}</span>
+          ${multiDay ? `<span><i class="ti ti-calendar-week"></i>${nDays} días</span>` : ''}
+          <span><i class="ti ti-map-pin"></i>${ev.lugar||'Sin lugar'}</span>
+          <span><i class="ti ti-building-hospital"></i>${(ev.estab||'—').split('—')[0].trim()}</span>
+          <span><i class="ti ti-users"></i>${nPart} participantes (${nAsi} asistieron)</span>
+          ${nMed ? `<span><i class="ti ti-photo"></i>${nMed} evidencias</span>` : ''}
+        </div>
+        <span class="chip ${modalColor[ev.modalidad]||'chip-blue'}">${modalLabel[ev.modalidad]||'Presencial'}</span>
+      </div>
+      <div class="list-event-actions">
+        <button class="btn-icon" onclick="event.stopPropagation();editarEvento('${ev.id}')" title="Editar"><i class="ti ti-pencil"></i></button>
+        <button class="btn-icon del" onclick="event.stopPropagation();eliminarEvento('${ev.id}')" title="Eliminar"><i class="ti ti-trash"></i></button>
+        <button class="btn btn-success btn-sm" onclick="event.stopPropagation();generarActaUno('${ev.id}')"><i class="ti ti-file-certificate"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+  actualizarBarraSeleccion();
+}
+
+/* ═══════════════════ STATS ═══════════════════ */
+function updateStats() {
+  document.getElementById('stat-sesiones').textContent = eventos.length;
+  const totalPart = eventos.reduce((s,e)=>s+(e.participantes||[]).length,0);
+  const totalAsi = eventos.reduce((s,e)=>s+(e.participantes||[]).filter(p=>p.estado==='Asistió').length,0);
+  const totalMed = eventos.reduce((s,e)=>s+(e.medias||[]).length,0);
+  document.getElementById('stat-participantes').textContent = totalPart;
+  document.getElementById('stat-asistieron').textContent = totalAsi;
+  document.getElementById('stat-evidencias').textContent = totalMed;
+}
+
+/* ═══════════════════ NUEVO / EDITAR EVENTO ═══════════════════ */
+function abrirNuevoEvento(fecha = null) {
+  editingId = null;
+  participantesTemp = [];
+  mediasTemp = [];
+  document.getElementById('ev-modal-title').innerHTML = '<i class="ti ti-calendar-plus"></i> Nueva Capacitación';
+  limpiarFormEvento();
+  if (fecha) {
+    document.getElementById('ev-fecha-ini').value = fecha;
+    document.getElementById('ev-fecha-fin').value = fecha;
+    syncFechaFin();
+  }
+  switchMTab('info');
+  renderPartTabla();
+  renderMediaGrid();
+  document.getElementById('overlay-evento').classList.add('open');
+}
+
+function editarEvento(id) {
+  const ev = eventos.find(e => e.id === id);
+  if (!ev) return;
+  editingId = id;
+  participantesTemp = JSON.parse(JSON.stringify(ev.participantes || []));
+  mediasTemp = JSON.parse(JSON.stringify(ev.medias || []));
+  document.getElementById('ev-modal-title').innerHTML = '<i class="ti ti-pencil"></i> Editar Capacitación';
+  document.getElementById('ev-titulo').value = ev.titulo || '';
+  document.getElementById('ev-fecha-ini').value = ev.fechaIni || ev.fecha || '';
+  document.getElementById('ev-fecha-fin').value = ev.fechaFin || ev.fecha || '';
+  syncFechaFin();
+  document.getElementById('ev-modalidad').value = ev.modalidad || 'presencial';
+  document.getElementById('ev-hora-ini').value = ev.horaIni || '08:00';
+  document.getElementById('ev-hora-fin').value = ev.horaFin || '17:00';
+  document.getElementById('ev-lugar').value = ev.lugar || '';
+  document.getElementById('ev-estab').value = ev.estab || '';
+  document.getElementById('ev-capacitador').value = ev.capacitador || '';
+  document.getElementById('ev-cap-cargo').value = ev.capCargo || '';
+  document.getElementById('ev-coordinador').value = ev.coordinador || '';
+  document.getElementById('ev-resp-acta').value = ev.respActa || '';
+  document.getElementById('ev-objetivos').value = ev.objetivos || '';
+  document.getElementById('ev-temas').value = ev.temas || '';
+  document.getElementById('ev-metodologia').value = ev.metodologia || '';
+  document.getElementById('ev-compromisos').value = ev.compromisos || '';
+  document.getElementById('ev-obs').value = ev.obs || '';
+  switchMTab('info');
+  renderPartTabla();
+  renderMediaGrid();
+  document.getElementById('overlay-evento').classList.add('open');
+}
+
+function limpiarFormEvento() {
+  ['ev-titulo','ev-lugar','ev-estab','ev-capacitador','ev-cap-cargo','ev-coordinador','ev-resp-acta','ev-objetivos','ev-temas','ev-metodologia','ev-compromisos','ev-obs'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('ev-modalidad').value = 'presencial';
+  document.getElementById('ev-hora-ini').value = '08:00';
+  document.getElementById('ev-hora-fin').value = '17:00';
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('ev-fecha-ini').value = hoy;
+  document.getElementById('ev-fecha-fin').value = hoy;
+  document.getElementById('dias-seleccionados-wrap').style.display = 'none';
+}
+
+function guardarEvento() {
+  const titulo = document.getElementById('ev-titulo').value.trim();
+  const fechaIni = document.getElementById('ev-fecha-ini').value;
+  const fechaFin = document.getElementById('ev-fecha-fin').value;
+  if (!titulo) { toast('El título es obligatorio', 'err'); switchMTab('info'); return; }
+  if (!fechaIni) { toast('La fecha de inicio es obligatoria', 'err'); switchMTab('info'); return; }
+  if (!fechaFin) { toast('La fecha de fin es obligatoria', 'err'); switchMTab('info'); return; }
+  if (fechaFin < fechaIni) { toast('La fecha fin no puede ser anterior a la fecha inicio', 'err'); return; }
+  const ev = {
+    id: editingId || uid(),
+    titulo, fechaIni, fechaFin,
+    modalidad: document.getElementById('ev-modalidad').value,
+    horaIni: document.getElementById('ev-hora-ini').value,
+    horaFin: document.getElementById('ev-hora-fin').value,
+    lugar: document.getElementById('ev-lugar').value.trim(),
+    estab: document.getElementById('ev-estab').value.trim(),
+    capacitador: document.getElementById('ev-capacitador').value.trim(),
+    capCargo: document.getElementById('ev-cap-cargo').value.trim(),
+    coordinador: document.getElementById('ev-coordinador').value.trim(),
+    respActa: document.getElementById('ev-resp-acta').value.trim(),
+    objetivos: document.getElementById('ev-objetivos').value.trim(),
+    temas: document.getElementById('ev-temas').value.trim(),
+    metodologia: document.getElementById('ev-metodologia').value.trim(),
+    compromisos: document.getElementById('ev-compromisos').value.trim(),
+    obs: document.getElementById('ev-obs').value.trim(),
+    participantes: participantesTemp,
+    medias: mediasTemp,
+  };
+  if (editingId) {
+    const idx = eventos.findIndex(e => e.id === editingId);
+    eventos[idx] = ev;
+    toast('Capacitación actualizada');
+  } else {
+    eventos.push(ev);
+    toast('Capacitación registrada exitosamente');
+  }
+  dbPersistir().catch(() => {});
+  cerrarModal('overlay-evento');
+  renderAll();
+}
+
+/* ═══════════════════ MODAL TABS ═══════════════════ */
+function switchMTab(tab) {
+  ['info','participantes','contenido','evidencias'].forEach(t => {
+    document.getElementById('mtp-'+t).classList.toggle('active', t===tab);
+    document.getElementById('mtt-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+/* ═══════════════════ PARTICIPANTES ═══════════════════ */
+function agregarParticipante() {
+  const nombre = document.getElementById('p-nombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+  participantesTemp.push({
+    id: uid(),
+    nombre,
+    doc: document.getElementById('p-doc').value.trim(),
+    profesion: document.getElementById('p-profesion').value,
+    servicio: document.getElementById('p-servicio-input').value.trim(),
+    email: document.getElementById('p-email-input').value.trim(),
+    celular: document.getElementById('p-celular-input').value.trim(),
+    estado: document.getElementById('p-estado').value,
+  });
+  ['p-nombre','p-doc','p-servicio-input','p-email-input','p-celular-input'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-profesion').value = '';
+  document.getElementById('p-estado').value = 'Asistió';
+  renderPartTabla();
+  toast('Participante agregado', 'inf');
+}
+
+function renderPartTabla() {
+  document.getElementById('badge-part').textContent = participantesTemp.length;
+  const tbody = document.getElementById('part-tbody');
+  if (!participantesTemp.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px;font-size:13px;">Sin participantes. Agrega usando el formulario superior.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = participantesTemp.map((p,i) => `<tr>
+    <td style="text-align:center;font-size:12px;color:#9ca3af;">${i+1}</td>
+    <td><div class="cell-name"><div class="avatar">${initials(p.nombre)}</div><div><div style="font-weight:500;font-size:13px">${p.nombre}</div>${p.email?`<div style="font-size:11px;color:#9ca3af">${p.email}</div>`:''}</div></div></td>
+    <td style="font-size:12px;">${p.doc||'—'}</td>
+    <td>${p.profesion?`<span class="chip chip-blue">${p.profesion}</span>`:'—'}</td>
+    <td style="font-size:12.5px;">${p.servicio||'—'}</td>
+    <td style="font-size:12.5px;">${p.celular||'—'}</td>
+    <td><span class="chip ${estadoChip[p.estado]||'chip-gray'}">${p.estado}</span></td>
+    <td><button class="btn-icon del" onclick="quitarPart('${p.id}')"><i class="ti ti-trash"></i></button></td>
+  </tr>`).join('');
+}
+
+function quitarPart(id) {
+  participantesTemp = participantesTemp.filter(p => p.id !== id);
+  renderPartTabla();
+}
+
+/* ═══════════════════ EVIDENCIAS ═══════════════════ */
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+}
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      toast('Solo se permiten imágenes y videos', 'err'); return;
+    }
+    if (file.size > 52428800) { toast('Archivo demasiado grande (máx. 50MB)', 'err'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      mediasTemp.push({ id: uid(), name: file.name, type: file.type, dataUrl: ev.target.result });
+      renderMediaGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function renderMediaGrid() {
+  document.getElementById('badge-ev').textContent = mediasTemp.length;
+  const grid = document.getElementById('media-grid');
+  const empty = document.getElementById('ev-media-empty');
+  if (!mediasTemp.length) { grid.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = mediasTemp.map(m => `
+    <div class="media-thumb" onclick="abrirLightbox('${m.id}')">
+      ${m.type.startsWith('video/') ? `<video src="${m.dataUrl}" style="width:100%;height:100%;object-fit:cover"></video><div class="vid-overlay"><i class="ti ti-player-play"></i></div>` : `<img src="${m.dataUrl}" alt="${m.name}">`}
+      <button class="del-media" onclick="event.stopPropagation();quitarMedia('${m.id}')"><i class="ti ti-x"></i></button>
+      <div class="media-caption">${m.name}</div>
+    </div>`).join('');
+}
+function quitarMedia(id) {
+  mediasTemp = mediasTemp.filter(m => m.id !== id);
+  renderMediaGrid();
+}
+function abrirLightbox(id) {
+  const m = mediasTemp.find(x => x.id === id);
+  if (!m) return;
+  const lb = document.getElementById('lightbox');
+  const content = document.getElementById('lightbox-content');
+  if (m.type.startsWith('video/')) {
+    content.innerHTML = `<video src="${m.dataUrl}" controls style="max-width:90vw;max-height:88vh;border-radius:10px;"></video>`;
+  } else {
+    content.innerHTML = `<img src="${m.dataUrl}" style="max-width:90vw;max-height:88vh;border-radius:10px;">`;
+  }
+  lb.classList.add('open');
+}
+
+/* ═══════════════════ VER EVENTO ═══════════════════ */
+function verEvento(id) {
+  const ev = eventos.find(e => e.id === id);
+  if (!ev) return;
+  verEventoId = id;
+  document.getElementById('ver-titulo').innerHTML = `<i class="ti ti-calendar-event"></i> ${ev.titulo}`;
+  const nPart = (ev.participantes||[]).length;
+  const nAsi = (ev.participantes||[]).filter(p=>p.estado==='Asistió').length;
+  const M = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaMostrar = ev.fechaIni || ev.fecha || '';
+  const fechaMostrarFin = ev.fechaFin || ev.fecha || '';
+  const multiDayEv = fechaMostrar !== fechaMostrarFin;
+  const [y,m,d] = fechaMostrar.split('-');
+  const body = document.getElementById('ver-body');
+  const capList = (ev.capacitador||'').split('\n').filter(Boolean);
+  const capDisplay = capList.length > 1 ? capList.join(', ') : (ev.capacitador||'');
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">
+      <div style="background:var(--sky);padding:12px 14px;border-radius:10px;border:1px solid var(--sky2);">
+        <div style="font-size:11px;color:var(--blue);font-weight:600;text-transform:uppercase;margin-bottom:3px;">Fecha</div>
+        <div style="font-size:14px;font-weight:600;color:var(--navy)">${multiDayEv ? `${parseInt(d)} al ${parseInt(fechaMostrarFin.split('-')[2])} de ${M[parseInt(m)-1]} de ${y}` : `${parseInt(d)} de ${M[parseInt(m)-1]} de ${y}`}</div>
+      </div>
+      <div style="background:var(--sky);padding:12px 14px;border-radius:10px;border:1px solid var(--sky2);">
+        <div style="font-size:11px;color:var(--blue);font-weight:600;text-transform:uppercase;margin-bottom:3px;">Horario</div>
+        <div style="font-size:14px;font-weight:600;color:var(--navy)">${ev.horaIni||'—'} – ${ev.horaFin||'—'}</div>
+      </div>
+      <div style="background:var(--sky);padding:12px 14px;border-radius:10px;border:1px solid var(--sky2);">
+        <div style="font-size:11px;color:var(--blue);font-weight:600;text-transform:uppercase;margin-bottom:3px;">Modalidad</div>
+        <div><span class="chip ${modalColor[ev.modalidad]||'chip-blue'}">${modalLabel[ev.modalidad]||'Presencial'}</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;margin-bottom:16px;">
+      ${ev.lugar?`<div><strong style="color:var(--navy)">Lugar:</strong> ${ev.lugar}</div>`:''}
+      ${ev.estab?`<div><strong style="color:var(--navy)">Establecimiento:</strong> ${ev.estab}</div>`:''}
+      ${capDisplay?`<div><strong style="color:var(--navy)">Capacitador(es):</strong> ${capDisplay}</div>`:''}
+      ${ev.capCargo?`<div><strong style="color:var(--navy)">Cargo:</strong> ${ev.capCargo}</div>`:''}
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:18px;">
+      <div style="background:var(--green-l);padding:10px 18px;border-radius:8px;text-align:center;flex:1;">
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--green);font-weight:700">${nPart}</div>
+        <div style="font-size:11px;color:var(--green);text-transform:uppercase">Registrados</div>
+      </div>
+      <div style="background:var(--teal-l);padding:10px 18px;border-radius:8px;text-align:center;flex:1;">
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--teal);font-weight:700">${nAsi}</div>
+        <div style="font-size:11px;color:var(--teal);text-transform:uppercase">Asistieron</div>
+      </div>
+      <div style="background:var(--gold-l);padding:10px 18px;border-radius:8px;text-align:center;flex:1;">
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);font-weight:700">${(ev.medias||[]).length}</div>
+        <div style="font-size:11px;color:var(--gold);text-transform:uppercase">Evidencias</div>
+      </div>
+    </div>
+    ${(ev.medias||[]).length ? `
+    <div style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Evidencias multimedia</div>
+    <div class="media-grid" style="margin-bottom:16px;">
+      ${ev.medias.map(m=>`<div class="media-thumb" onclick="abrirLightboxDirect('${m.id}','${ev.id}')">
+        ${m.type.startsWith('video/')?`<video src="${m.dataUrl}" style="width:100%;height:100%;object-fit:cover"></video><div class="vid-overlay"><i class="ti ti-player-play"></i></div>`:`<img src="${m.dataUrl}" alt="${m.name}">`}
+        <div class="media-caption">${m.name}</div>
+      </div>`).join('')}
+    </div>`:'' }
+    ${nPart ? `
+    <div style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Participantes</div>
+    <div class="part-table-wrap">
+    <table class="part-table">
+      <thead><tr><th>#</th><th>Nombre</th><th>Profesión</th><th>Celular</th><th>Estado</th></tr></thead>
+      <tbody>${(ev.participantes||[]).map((p,i)=>`<tr>
+        <td style="text-align:center;font-size:12px;">${i+1}</td>
+        <td><div class="cell-name"><div class="avatar">${initials(p.nombre)}</div>${p.nombre}</div></td>
+        <td>${p.profesion||'—'}</td>
+        <td style="font-size:12px;">${p.celular||'—'}</td>
+        <td><span class="chip ${estadoChip[p.estado]||'chip-gray'}">${p.estado}</span></td>
+      </tr>`).join('')}</tbody>
+    </table></div>` : ''}
+  `;
+  document.getElementById('overlay-ver').classList.add('open');
+}
+
+function abrirLightboxDirect(mediaId, evId) {
+  const ev = eventos.find(e => e.id === evId);
+  if (!ev) return;
+  const m = (ev.medias||[]).find(x=>x.id===mediaId);
+  if (!m) return;
+  const lb = document.getElementById('lightbox');
+  const content = document.getElementById('lightbox-content');
+  content.innerHTML = m.type.startsWith('video/')
+    ? `<video src="${m.dataUrl}" controls style="max-width:90vw;max-height:88vh;border-radius:10px;"></video>`
+    : `<img src="${m.dataUrl}" style="max-width:90vw;max-height:88vh;border-radius:10px;">`;
+  lb.classList.add('open');
+}
+
+function eliminarEventoVer() {
+  if (!verEventoId) return;
+  const ev = eventos.find(e=>e.id===verEventoId);
+  if (!confirm(`¿Eliminar "${ev.titulo}"?`)) return;
+  eliminarEvento(verEventoId);
+  cerrarModal('overlay-ver');
+}
+function editarEventoVer() {
+  cerrarModal('overlay-ver');
+  editarEvento(verEventoId);
+}
+function generarActaEvento() {
+  cerrarModal('overlay-ver');
+  generarActaUno(verEventoId);
+}
+
+function eliminarEvento(id) {
+  const ev = eventos.find(e=>e.id===id);
+  if (!ev) return;
+  if (!confirm(`¿Eliminar "${ev.titulo}"?`)) return;
+  eventos = eventos.filter(e=>e.id!==id);
+  dbPersistir().catch(() => {});
+  toast('Capacitación eliminada', 'inf');
+  renderAll();
+}
+
+/* ═══════════════════ ACTA PDF ═══════════════════ */
+function abrirActaModal(selectedIds) {
+  if (!eventos.length) { toast('No hay capacitaciones registradas', 'err'); return; }
+  const wrap = document.getElementById('acta-selector-wrap');
+  if (selectedIds && selectedIds.length) {
+    wrap.innerHTML = `<label style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;">Sesiones seleccionadas (${selectedIds.length}):</label>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+        ${selectedIds.map(id => {
+          const ev = eventos.find(e => e.id === id);
+          return ev ? `<span class="chip chip-blue">${fmt(ev.fechaIni||ev.fecha)} — ${ev.titulo}</span>` : '';
+        }).join('')}
+      </div>
+      <input type="hidden" id="acta-selected-ids" value="${selectedIds.join(',')}">`;
+    renderActaPreview(selectedIds);
+  } else {
+    const sel = document.createElement('select');
+    sel.id = 'acta-selector';
+    sel.style.cssText = 'padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:\'Outfit\',sans-serif;font-size:13px;outline:none;';
+    sel.innerHTML = '<option value="all">Todas las sesiones (resumen consolidado)</option>';
+    eventos.forEach(ev => {
+      const opt = document.createElement('option');
+      opt.value = ev.id;
+      opt.textContent = `${fmt(ev.fechaIni||ev.fecha)} — ${ev.titulo}`;
+      sel.appendChild(opt);
+    });
+    sel.onchange = () => renderActaPreview();
+    wrap.innerHTML = `<label style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;">Sesión a exportar:</label>`;
+    wrap.appendChild(sel);
+    renderActaPreview();
+  }
+  cargarUrlQR();
+  document.getElementById('overlay-acta').classList.add('open');
+}
+
+function generarActaUno(id) {
+  if (!eventos.length) { toast('No hay capacitaciones', 'err'); return; }
+  abrirActaModal([id]);
+}
+
+/* ═══════════════════ QR ═══════════════════ */
+const URL_QR_KEY = 'sihce_public_url';
+
+function guardarUrlQR() {
+  localStorage.setItem(URL_QR_KEY, document.getElementById('acta-qr-url').value.trim());
+}
+
+function cargarUrlQR() {
+  const v = localStorage.getItem(URL_QR_KEY) || '';
+  const el = document.getElementById('acta-qr-url');
+  if (el) el.value = v;
+  return v;
+}
+
+function obtenerUrlActa(numActa) {
+  const base = localStorage.getItem(URL_QR_KEY) || '';
+  if (!base) return '';
+  return base.replace(/\/+$/, '') + '?acta=' + encodeURIComponent(numActa);
+}
+
+function generarQRDataURL(texto) {
+  if (!texto || typeof qrcode === 'undefined') return null;
+  const qr = qrcode(0, 'M');
+  qr.addData(texto);
+  qr.make();
+  return qr.createDataURL(6, 0);
+}
+
+function renderQR(texto) {
+  if (!texto) return '';
+  const dataUrl = generarQRDataURL(texto);
+  if (!dataUrl) return '';
+  return `<div style="text-align:center;margin-top:18px;"><img src="${dataUrl}" style="width:100px;height:100px;border:1px solid var(--border);border-radius:6px;" alt="QR"><div style="font-size:9px;color:#9ca3af;margin-top:4px;">Escanee para ver el acta digital</div></div>`;
+}
+
+function renderActaPreview(selectedIds) {
+  const wrap = document.getElementById('acta-preview');
+  if (selectedIds && selectedIds.length) {
+    const evs = selectedIds.map(id => eventos.find(e => e.id === id)).filter(Boolean);
+    if (evs.length === 1) {
+      wrap.innerHTML = buildActaHTML(evs[0]);
+    } else {
+      wrap.innerHTML = buildActaHTML(null, evs);
+    }
+    return;
+  }
+  const sel = document.getElementById('acta-selector');
+  if (sel && sel.value === 'all') {
+    wrap.innerHTML = buildActaHTML(null);
+  } else if (sel) {
+    const ev = eventos.find(e => e.id === sel.value);
+    wrap.innerHTML = ev ? buildActaHTML(ev) : '';
+  }
+}
+
+function buildActaHTML(ev, eventosFiltrados) {
+  const numActa = 'ACTA-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*9000)+1000);
+  const evs = eventosFiltrados || (ev ? [ev] : eventos);
+  if (!ev || evs.length > 1) {
+    // Resumen consolidado (de todos o de los filtrados)
+    const totalPart = evs.reduce((s,e)=>s+(e.participantes||[]).length,0);
+    const totalAsi = evs.reduce((s,e)=>s+(e.participantes||[]).filter(p=>p.estado==='Asistió').length,0);
+    return `<div class="acta-doc">
+      <div class="hdr"><h1>OFICINA DE GESTION DE SERVICIOS DE SALUD BAJO MAYO - OGESS BAJO MAYO</h1><p>UTI · Sistema Integrado de Historia Clínica Electrónica — SIHCE</p></div>
+      <div class="doc-title"><h2>Acta Consolidada de Capacitaciones</h2><div class="acta-num">${numActa}</div></div>
+      <div class="meta-box">
+        <div class="mitem"><strong>Total de sesiones:</strong> ${evs.length}</div>
+        <div class="mitem"><strong>Total participantes:</strong> ${totalPart}</div>
+        <div class="mitem"><strong>Total asistentes:</strong> ${totalAsi}</div>
+        <div class="mitem"><strong>Generado:</strong> ${new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      </div>
+      <div class="sec-hd"><i class="ti ti-calendar-event"></i>Sesiones de capacitación</div>
+      <table class="at"><thead><tr><th>#</th><th>Fecha</th><th>Título</th><th>Modalidad</th><th>Lugar</th><th>Participantes</th><th>Asistieron</th></tr></thead>
+      <tbody>${evs.map((e,i)=>`<tr>
+        <td>${i+1}</td><td>${e.fechaIni&&e.fechaFin&&e.fechaIni!==e.fechaFin?fmt(e.fechaIni)+'–'+fmt(e.fechaFin):fmt(e.fechaIni||e.fecha)}</td><td>${e.titulo}</td>
+        <td>${modalLabel[e.modalidad]||'Presencial'}</td>
+        <td>${(e.lugar||'—').slice(0,30)}</td>
+        <td style="text-align:center">${(e.participantes||[]).length}</td>
+        <td style="text-align:center">${(e.participantes||[]).filter(p=>p.estado==='Asistió').length}</td>
+      </tr>`).join('')}</tbody></table>
+      <div class="firmas" style="margin-top:40px;">
+        <div class="firma-box"><strong>Capacitador(es)</strong>Capacitador(es) SIHCE</div>
+        <div class="firma-box"><strong>Responsable</strong>Responsable de Estadística UNGETs</div>
+        <div class="firma-box"><strong>Responsable</strong>Responsable del Establecimiento</div>
+      </div>
+      ${renderQR(obtenerUrlActa(numActa))}
+      <p style="font-size:10px;color:#9ca3af;text-align:center;margin-top:22px;border-top:1px solid #e2e8f0;padding-top:10px;">Generado por Bitácora SIHCE · ${new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'})}</p>
+    </div>`;
+  }
+
+  // Acta de una sola sesión
+  const nPart = (ev.participantes||[]).length;
+  const nAsi = (ev.participantes||[]).filter(p=>p.estado==='Asistió').length;
+  const fe = ev.fechaIni || ev.fecha || '';
+  const feFin = ev.fechaFin || ev.fecha || '';
+  const multiDayEv = fe !== feFin;
+  const feRange = fmtDateRange(fe, feFin);
+  const feRangeShort = multiDayEv ? `${fe} — ${feFin}` : fe;
+  const capacitadores = (ev.capacitador||'').split('\n').filter(Boolean);
+  const capHTML = capacitadores.join(', ') || '—';
+  const capFirma = capacitadores[0] || '___________________';
+  const temasHTML = (ev.temas||'Módulos del SIHCE.').split('\n').filter(Boolean).map(t=>`<li style="margin-bottom:4px;">${t.replace(/^\d+\.\s*/,'')}</li>`).join('');
+  return `<div class="acta-doc">
+    <div class="hdr">
+      <h1>OFICINA DE GESTION DE SERVICIOS DE SALUD BAJO MAYO - OGESS BAJO MAYO</h1>
+      <p>UTI - Unidad de Tecnología de la Información</p>
+      <p style="font-size:11px">Sistema Integrado de Historia Clínica Electrónica — SIHCE</p>
+    </div>
+    <div class="doc-title"><h2>Acta de Capacitación</h2><div class="acta-num">N° ${numActa}</div></div>
+
+    <p style="font-size:12.5px;text-align:justify;margin-bottom:14px;">
+      En ${ev.lugar||'el lugar indicado'}, siendo las <strong>${ev.horaIni||'—'}</strong> horas del${multiDayEv?'':' día'} <strong>${multiDayEv ? ' ' + feRange : fmtFull(fe)}</strong>,
+      se reunieron los profesionales de salud de <strong>${ev.estab||'la institución'}</strong>, con el fin de participar en la
+      capacitación sobre el uso del <strong>Sistema Integrado de Historia Clínica Electrónica (SIHCE)</strong>
+      en modalidad <strong>${modalLabel[ev.modalidad]||'Presencial'}</strong>, conducida por <strong>${capHTML}</strong>.
+    </p>
+
+    <div class="meta-box">
+      <div class="mitem"><strong>Fecha:</strong> ${feRangeShort}</div>
+      <div class="mitem"><strong>Horario:</strong> ${ev.horaIni||'—'} – ${ev.horaFin||'—'} hrs.</div>
+      <div class="mitem"><strong>Lugar:</strong> ${ev.lugar||'—'}</div>
+      <div class="mitem"><strong>Modalidad:</strong> ${modalLabel[ev.modalidad]||'Presencial'}</div>
+      <div class="mitem"><strong>Establecimiento:</strong> ${ev.estab||'—'}</div>
+      <div class="mitem"><strong>N° Participantes:</strong> ${nPart} (${nAsi} asistieron)</div>
+      <div class="mitem"><strong>Capacitador(es):</strong> ${capHTML}</div>
+      <div class="mitem"><strong>Cargo:</strong> ${ev.capCargo||'—'}</div>
+    </div>
+
+    ${ev.objetivos?`<div class="sec-hd"><i class="ti ti-target"></i>Objetivos</div><p style="font-size:12.5px;">${ev.objetivos}</p>`:''}
+    ${ev.temas?`<div class="sec-hd"><i class="ti ti-book"></i>Temas desarrollados</div><ul style="padding-left:18px;font-size:12.5px;line-height:1.9;">${temasHTML}</ul>`:''}
+    ${ev.metodologia?`<div class="sec-hd"><i class="ti ti-school"></i>Metodología</div><p style="font-size:12.5px;">${ev.metodologia}</p>`:''}
+
+    <div class="sec-hd"><i class="ti ti-users"></i>Lista de participantes (${nPart})</div>
+    <table class="at">
+      <thead><tr><th>#</th><th>Apellidos y Nombres</th><th>Documento</th><th>Profesión</th><th>Servicio</th><th>Celular</th><th>Estado</th><th>Firma</th></tr></thead>
+      <tbody>${(ev.participantes||[]).map((p,i)=>`<tr>
+        <td>${i+1}</td><td><strong>${p.nombre}</strong></td>
+        <td>${p.doc||'—'}</td><td>${p.profesion||'—'}</td>
+        <td>${p.servicio||'—'}</td>
+        <td>${p.celular||'—'}</td>
+        <td><span class="chip ${estadoChip[p.estado]||'chip-gray'}" style="font-size:10.5px">${p.estado}</span></td>
+        <td style="min-width:60px;border-bottom:1px solid #888;"></td>
+      </tr>`).join('')}</tbody>
+    </table>
+
+    ${ev.compromisos?`<div class="sec-hd"><i class="ti ti-check"></i>Compromisos y Acuerdos</div><p style="font-size:12.5px;">${ev.compromisos}</p>`:''}
+    ${ev.obs?`<div class="sec-hd"><i class="ti ti-notes"></i>Observaciones</div><p style="font-size:12.5px;">${ev.obs}</p>`:''}
+
+    <p style="font-size:12.5px;margin-top:14px;">
+      Siendo las <strong>${ev.horaFin||'—'}</strong> horas, habiéndose cumplido la agenda, se da por concluida la presente sesión, firmando los responsables en señal de conformidad.
+    </p>
+
+    <div class="firmas">
+      <div class="firma-box"><strong>${capFirma}</strong>Capacitador(es) SIHCE</div>
+      <div class="firma-box"><strong>${ev.coordinador||'___________________'}</strong>Responsable de Estadística UNGETs</div>
+      <div class="firma-box"><strong>${ev.respActa||'___________________'}</strong>Responsable del Establecimiento</div>
+    </div>
+    ${renderQR(obtenerUrlActa(numActa))}
+    <p style="font-size:10px;color:#9ca3af;text-align:center;margin-top:22px;border-top:1px solid #e2e8f0;padding-top:10px;">
+      ${numActa} · Bitácora de Capacitación SIHCE · ${new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'})}
+    </p>
+  </div>`;
+}
+
+/* ═══════════════════ EXPORT PDF ═══════════════════ */
+function exportarPDF() {
+  const { jsPDF } = window.jspdf;
+  const hiddenInput = document.getElementById('acta-selected-ids');
+  let selectedIds = [];
+  if (hiddenInput) {
+    selectedIds = hiddenInput.value ? hiddenInput.value.split(',').filter(Boolean) : [];
+  }
+  let ev = null, evs = [];
+  if (selectedIds.length === 1) {
+    ev = eventos.find(e => e.id === selectedIds[0]);
+    evs = [ev];
+  } else if (selectedIds.length > 1) {
+    evs = selectedIds.map(id => eventos.find(e => e.id === id)).filter(Boolean);
+  } else {
+    const sel = document.getElementById('acta-selector');
+    if (sel && sel.value === 'all') {
+      evs = eventos;
+    } else if (sel) {
+      ev = eventos.find(e => e.id === sel.value);
+      evs = ev ? [ev] : eventos;
+    } else {
+      evs = eventos;
+    }
+  }
+
+  if (!evs.length) { toast('No hay eventos para exportar', 'err'); return; }
+
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const navy = [12, 35, 64], blue = [26, 95, 168], gray = [74, 85, 104];
+  const white = [255,255,255], sky = [232,244,253], grisCl = [247,248,250];
+  const gold = [200,150,42];
+  const margin = 18, pw = 174;
+  let y = margin;
+
+  const numActa = 'ACTA-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*9000)+1000);
+
+  const addPage = () => { doc.addPage(); y = margin; };
+  const checkY = (n=16) => { if (y + n > 282) addPage(); };
+
+  // HEADER
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setFillColor(...gold);
+  doc.rect(0, 30, 210, 3, 'F');
+  doc.setTextColor(...white);
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('OFICINA DE GESTION DE SERVICIOS DE SALUD BAJO MAYO - OGESS BAJO MAYO', 105, 11, {align:'center'});
+  doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+  doc.text('UTI - Unidad de Tecnología de la Información', 105, 17, {align:'center'});
+  doc.text('Sistema Integrado de Historia Clínica Electrónica — SIHCE', 105, 22.5, {align:'center'});
+  y = 42;
+
+  // TITLE
+  doc.setTextColor(...navy);
+  doc.setFontSize(15); doc.setFont('helvetica','bold');
+  const title = evs.length === 1 ? 'ACTA DE CAPACITACIÓN' : 'ACTA CONSOLIDADA DE CAPACITACIONES';
+  doc.text(title, 105, y, {align:'center'});
+  y += 6;
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(150,150,150);
+  doc.text('N° ' + numActa, 105, y, {align:'center'});
+  y += 6;
+  doc.setDrawColor(...blue); doc.setLineWidth(0.5);
+  doc.line(margin, y, 210 - margin, y); y += 7;
+
+  if (evs.length !== 1) {
+    // Consolidado
+    const totalPart = evs.reduce((s,e)=>s+(e.participantes||[]).length,0);
+    const totalAsi = evs.reduce((s,e)=>s+(e.participantes||[]).filter(p=>p.estado==='Asistió').length,0);
+    const metaItems = [['Total sesiones',evs.length],['Total participantes',totalPart],['Total asistentes',totalAsi],['Generado',new Date().toLocaleDateString('es-PE')]];
+    doc.setFillColor(...sky); doc.rect(margin,y-4,pw,24,'F');
+    metaItems.forEach((m,i)=>{
+      const col = i < 2 ? margin + 3 : 105 + 3;
+      const row = y + (i%2)*10;
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...navy);
+      doc.text(m[0]+':',col,row);
+      doc.setFont('helvetica','normal'); doc.setTextColor(...gray);
+      doc.text(String(m[1]),col+30,row);
+    });
+    y += 26;
+
+    // Tabla sesiones
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...navy);
+    doc.text('Sesiones de capacitación', margin, y); y += 5;
+    const thW = [8,22,60,22,30,16,16]; const thX = [margin];
+    thW.slice(0,-1).forEach((w,i)=>thX.push(thX[i]+w));
+    const thH = ['#','Fecha','Título','Modalidad','Lugar','Part.','Asis.'];
+    doc.setFillColor(...navy); doc.rect(margin,y-4,pw,7,'F');
+    doc.setTextColor(...white); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    thH.forEach((h,i)=>doc.text(h,thX[i]+1,y));
+    y+=5;
+    evs.forEach((e,idx)=>{
+      checkY(8);
+      if (idx%2===0){doc.setFillColor(...grisCl);doc.rect(margin,y-4,pw,7,'F');}
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...gray);
+      doc.text(String(idx+1),thX[0]+1,y);
+      const fechaTxt = (e.fechaIni && e.fechaFin && e.fechaIni !== e.fechaFin) ? `${e.fechaIni.slice(5)}–${e.fechaFin.slice(5)}` : fmt(e.fechaIni||e.fecha);
+      doc.text(fechaTxt, thX[1]+1, y);
+      doc.text(e.titulo.slice(0,35),thX[2]+1,y);
+      doc.text(modalLabel[e.modalidad]||'Pres.',thX[3]+1,y);
+      doc.text((e.lugar||'—').slice(0,18),thX[4]+1,y);
+      doc.text(String((e.participantes||[]).length),thX[5]+2,y);
+      doc.text(String((e.participantes||[]).filter(p=>p.estado==='Asistió').length),thX[6]+2,y);
+      y+=7;
+    });
+    // QR en PDF consolidado
+    const qrUrl = obtenerUrlActa(numActa);
+    if (qrUrl) {
+      const qrData = generarQRDataURL(qrUrl);
+      if (qrData) {
+        checkY(30);
+        doc.addImage(qrData, 'PNG', margin + pw/2 - 14, y, 28, 28);
+        y += 32;
+      }
+    }
+  } else {
+    // Acta individual
+    const nPart=(ev.participantes||[]).length, nAsi=(ev.participantes||[]).filter(p=>p.estado==='Asistió').length;
+    const fe = ev.fechaIni || ev.fecha || '';
+    const feFin = ev.fechaFin || ev.fecha || '';
+    const multiDay = fe !== feFin;
+    const feRange = fmtDateRange(fe, feFin);
+    const feRangeShort = multiDay ? `${fe} — ${feFin}` : fmtFull(fe);
+    const capacitadores = (ev.capacitador||'').split('\n').filter(Boolean);
+    const capHTML = capacitadores.join(', ') || 'el capacitador designado';
+    const capFirma = capacitadores[0] || '___________________';
+
+    // Párrafo introductorio
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(...gray);
+    const intro = `En ${ev.lugar||'el lugar indicado'}, siendo las ${ev.horaIni||'—'} horas del${multiDay?'':' día'} ${multiDay ? feRange : fmtFull(fe)}, se reunieron los profesionales de salud de ${ev.estab||'la institución'}, para participar en la capacitación del Sistema Integrado de Historia Clínica Electrónica (SIHCE), en modalidad ${modalLabel[ev.modalidad]||'Presencial'}, conducida por ${capHTML}.`;
+    const introL = doc.splitTextToSize(intro, pw);
+    doc.text(introL, margin, y); y += introL.length * 4.5 + 5;
+
+    // Meta
+    checkY(30);
+    const metaRows = [
+      ['Fecha',feRangeShort],['Horario',`${ev.horaIni||'—'} – ${ev.horaFin||'—'} hrs.`],
+      ['Lugar',ev.lugar||'—'],['Modalidad',modalLabel[ev.modalidad]||'—'],
+      ['Establecimiento',ev.estab||'—'],['Participantes',`${nPart} (${nAsi} asistieron)`],
+      ['Capacitador(es)',capHTML],['Cargo',ev.capCargo||'—'],
+    ];
+    const mH = Math.ceil(metaRows.length/2)*6+8;
+    doc.setFillColor(...sky); doc.roundedRect(margin,y,pw,mH,2,2,'F');
+    let my = y+6;
+    for (let i=0;i<metaRows.length;i+=2){
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...navy);
+      doc.text(metaRows[i][0]+':',margin+3,my);
+      doc.setFont('helvetica','normal');doc.setTextColor(...gray);
+      doc.text(String(metaRows[i][1]).slice(0,36),margin+28,my);
+      if(metaRows[i+1]){
+        doc.setFont('helvetica','bold');doc.setTextColor(...navy);
+        doc.text(metaRows[i+1][0]+':',105+3,my);
+        doc.setFont('helvetica','normal');doc.setTextColor(...gray);
+        doc.text(String(metaRows[i+1][1]).slice(0,30),105+26,my);
+      }
+      my+=6;
+    }
+    y=my+4;
+
+    const printSection = (label, text) => {
+      if (!text) return;
+      checkY(16);
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...navy);
+      doc.text(label, margin, y); y += 5;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...gray);
+      const lines = doc.splitTextToSize(text, pw);
+      doc.text(lines, margin, y); y += lines.length * 4.2 + 4;
+    };
+
+    printSection('Objetivos', ev.objetivos);
+    if (ev.temas) {
+      checkY(20);
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...navy);
+      doc.text('Temas Desarrollados', margin, y); y += 5;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...gray);
+      ev.temas.split('\n').filter(Boolean).forEach(t => {
+        checkY(7);
+        doc.text('• ' + t.replace(/^\d+\.\s*/,''), margin+2, y); y += 4.5;
+      });
+      y += 2;
+    }
+    printSection('Metodología', ev.metodologia);
+
+    // Tabla participantes
+    checkY(24);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...navy);
+    doc.text(`Lista de Participantes (${nPart})`, margin, y); y += 5;
+    const cols=[8,50,18,24,22,16,18,18]; const colX=[margin];
+    cols.slice(0,-1).forEach((w,i)=>colX.push(colX[i]+w));
+    const hdrs=['#','Apellidos y Nombres','Documento','Profesión','Servicio','Celular','Estado','Firma'];
+    doc.setFillColor(...navy); doc.rect(margin,y-4,pw,7,'F');
+    doc.setTextColor(...white); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    hdrs.forEach((h,i)=>doc.text(h,colX[i]+1,y)); y+=5;
+    (ev.participantes||[]).forEach((p,idx)=>{
+      checkY(8);
+      if(idx%2===0){doc.setFillColor(...grisCl);doc.rect(margin,y-4,pw,7,'F');}
+      doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...gray);
+      doc.text(String(idx+1),colX[0]+1,y);
+      doc.text(p.nombre.slice(0,28),colX[1]+1,y);
+      doc.text((p.doc||'—').slice(0,12),colX[2]+1,y);
+      doc.text((p.profesion||'—').slice(0,15),colX[3]+1,y);
+      doc.text((p.servicio||'—').slice(0,14),colX[4]+1,y);
+      doc.text((p.celular||'—').slice(0,12),colX[5]+1,y);
+      const sc={Asistió:[6,95,70],Pendiente:[146,64,14],Ausente:[163,32,32]};
+      doc.setTextColor(...(sc[p.estado]||gray));
+      doc.text(p.estado,colX[6]+1,y);
+      doc.setTextColor(...gray);
+      doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);
+      doc.line(colX[7],y+1,colX[7]+15,y+1);
+      y+=7;
+    });
+    y+=3;
+
+    printSection('Compromisos y Acuerdos', ev.compromisos);
+    printSection('Observaciones', ev.obs);
+
+    // Cierre
+    checkY(12);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...gray);
+    const cierre = `Siendo las ${ev.horaFin||'—'} horas, habiéndose cumplido los puntos de la agenda, se da por concluida la sesión, firmando los responsables en señal de conformidad.`;
+    const cierreL = doc.splitTextToSize(cierre,pw);
+    doc.text(cierreL,margin,y); y+=cierreL.length*4.2+14;
+
+    // Firmas
+    checkY(36);
+    const firmantes = [
+      [capFirma,'Capacitador(es) SIHCE'],
+      [ev.coordinador||'___________________','Responsable de Estadística UNGETs'],
+      [ev.respActa||'___________________','Responsable del Establecimiento'],
+    ];
+    const fw=(pw-16)/3;
+    firmantes.forEach((f,i)=>{
+      const fx=margin+i*(fw+8);
+      doc.setDrawColor(...gray); doc.setLineWidth(0.4);
+      doc.line(fx,y,fx+fw,y);
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...navy);
+      doc.text(f[0].slice(0,26),fx+fw/2,y+5,{align:'center'});
+      doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...gray);
+      doc.text(f[1],fx+fw/2,y+9,{align:'center'});
+    });
+    y+=18;
+    // QR en PDF individual
+    const qrUrlI = obtenerUrlActa(numActa);
+    if (qrUrlI) {
+      const qrDataI = generarQRDataURL(qrUrlI);
+      if (qrDataI) {
+        checkY(30);
+        doc.addImage(qrDataI, 'PNG', margin + pw/2 - 14, y, 28, 28);
+        y += 32;
+      }
+    }
+  }
+
+  // Footer en todas las páginas
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let p=1;p<=pageCount;p++) {
+    doc.setPage(p);
+    doc.setFillColor(...navy); doc.rect(0,290,210,10,'F');
+    doc.setFillColor(...gold); doc.rect(0,290,4,10,'F');
+    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(...white);
+    doc.text(`${numActa} · Bitácora SIHCE · Pág. ${p} de ${pageCount}`, 105, 296, {align:'center'});
+  }
+
+  const fname = ev ? `Acta_${ev.titulo.slice(0,30).replace(/\s+/g,'_')}_${(ev.fechaIni||ev.fecha||'').split('T')[0]}.pdf` : `Acta_Consolidada_SIHCE_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(fname);
+  toast('¡Acta PDF descargada correctamente!');
+}
+
+/* ═══════════════════ CSV ═══════════════════ */
+function exportCSV() {
+  if (!eventos.length) { toast('No hay datos para exportar','err'); return; }
+  const evs = selectedEventIds.size ? eventos.filter(e => selectedEventIds.has(e.id)) : eventos;
+  const rows = [['Fecha inicio','Fecha fin','Título','Modalidad','Lugar','Establecimiento','Capacitador','Participante','Documento','Profesión','Servicio','Celular','Estado']];
+  evs.forEach(ev => {
+    const fechaIni = ev.fechaIni || ev.fecha || '';
+    const fechaFin = ev.fechaFin || ev.fecha || '';
+    if (!(ev.participantes||[]).length) {
+      rows.push([fechaIni, fechaFin, ev.titulo, modalLabel[ev.modalidad]||'', ev.lugar||'', ev.estab||'', ev.capacitador||'', '','','','','','']);
+    } else {
+      (ev.participantes||[]).forEach(p => {
+        rows.push([fechaIni, fechaFin, ev.titulo, modalLabel[ev.modalidad]||'', ev.lugar||'', ev.estab||'', ev.capacitador||'', p.nombre, p.doc||'', p.profesion||'', p.servicio||'', p.celular||'', p.estado]);
+      });
+    }
+  });
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = `bitacora_sihce_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  toast('CSV exportado');
+}
+
+/* ═══════════════════ HELPERS ═══════════════════ */
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key==='Escape' && !document.getElementById('overlay-login').classList.contains('open')) { ['overlay-evento','overlay-ver','overlay-acta'].forEach(id=>{document.getElementById(id).classList.remove('open');}); document.getElementById('lightbox').classList.remove('open'); } });
+</script>
+</body>
+</html>
