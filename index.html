@@ -1366,6 +1366,11 @@ async function sincronizarUsuarios() {
     // Nube falló, no hay admin en caché → usar último rol conocido
     const saved = localStorage.getItem('bitacora_role_' + currentUser.name);
     if (saved === 'admin' || saved === 'editor') currentUser.role = saved;
+    // Si la nube está configurada pero no responde, el usuario local es admin
+    if (!saved && cargarConfigNube()) {
+      currentUser.role = 'admin';
+      localStorage.setItem('bitacora_role_' + currentUser.name, 'admin');
+    }
   }
   
   // Guardar rol solo si es válido y la nube respondió
