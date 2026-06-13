@@ -1383,8 +1383,8 @@ function limpiarConfigNube() {
 }
 
 function abrirConfigNube() {
-  if (!esAdmin()) { toast('Solo el administrador puede configurar la nube', 'err'); return; }
   const cfg = cargarConfigNube();
+  if (cfg && !esAdmin()) { toast('Solo el administrador puede configurar la nube', 'err'); return; }
   if (cfg) {
     document.getElementById('cfg-apikey').value = cfg.apiKey || '';
     document.getElementById('cfg-authdomain').value = cfg.authDomain || '';
