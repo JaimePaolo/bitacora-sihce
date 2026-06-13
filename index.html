@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --navy: #0c2340;
@@ -673,6 +675,43 @@ body {
 .login-card .login-btn:disabled { opacity:.6;cursor:not-allowed; }
 .login-card .login-lock { font-size:48px;margin-bottom:8px; }
 
+/* ── CLOUD SYNC ── */
+.cloud-btn { position:relative; }
+.cloud-btn .sync-dot {
+  width:8px;height:8px;border-radius:50%;position:absolute;top:2px;right:2px;
+  border:2px solid var(--navy);
+}
+.cloud-btn .sync-dot.connected { background:#22c55e; }
+.cloud-btn .sync-dot.disconnected { background:#ef4444; }
+.cloud-btn .sync-dot.loading { background:#f59e0b;animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.cloud-config-grid { display:grid;gap:14px; }
+.cloud-config-grid .fg input { font-family:monospace;font-size:12px; }
+.cloud-status { display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px; }
+.cloud-status.ok { background:var(--green-l);color:var(--green); }
+.cloud-status.err { background:var(--red-l);color:var(--red); }
+.cloud-status.loading { background:var(--amber-l);color:var(--amber); }
+
+/* ── USUARIOS Y ROLES ── */
+.login-user-section { margin:10px 0 0; }
+.login-user-section select, .login-user-section input {
+  width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);
+  font-size:14px;outline:none;background:white;color:var(--navy);box-sizing:border-box;
+}
+.login-user-section select:focus, .login-user-section input:focus { border-color:var(--gold); }
+.login-user-hint { font-size:11px;color:var(--gray);margin:6px 0 0; }
+.topbar-user { display:flex;align-items:center;gap:6px;margin-left:6px;padding-left:10px;border-left:1px solid rgba(255,255,255,.15); }
+.user-badge { font-size:12px;font-weight:600;color:white; }
+.role-badge { font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;text-transform:uppercase; }
+.role-admin { background:#f59e0b;color:#1e1b4b; }
+.role-editor { background:#3b82f6;color:white; }
+.role-viewer { background:#6b7280;color:white; }
+.user-table { width:100%;border-collapse:collapse;font-size:13px; }
+.user-table th { text-align:left;padding:8px 10px;background:var(--gray-l);color:var(--navy);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px; }
+.user-table td { padding:8px 10px;border-bottom:1px solid var(--border);color:var(--gray); }
+.user-table td:last-child { text-align:right; }
+.user-table .user-role-select { font-size:12px;padding:4px 6px;border-radius:4px;border:1px solid var(--border); }
+
 </style>
 </head>
 <body>
@@ -682,11 +721,100 @@ body {
   <div class="login-card">
     <div class="login-lock">🔐</div>
     <h1>Bitácora SIHCE</h1>
-    <p class="sub" id="login-subtitle">Ingresa tu contraseña para acceder</p>
-    <input type="password" id="login-password" placeholder="Contraseña" autofocus onkeydown="if(event.key==='Enter')handleLogin()">
+    <p class="sub" id="login-subtitle">Ingresa tus datos para acceder</p>
+    <div class="login-user-section">
+      <input type="text" id="login-username" placeholder="Tu nombre de usuario" autofocus onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()" />
+    </div>
+    <input type="password" id="login-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')handleLogin()">
     <p class="login-err" id="login-error">Contraseña incorrecta</p>
     <button class="login-btn" id="login-btn" onclick="handleLogin()">Ingresar</button>
     <p class="login-warn" id="login-warning">⚠️ Si pierdes la contraseña, los datos guardados no podrán recuperarse.</p>
+  </div>
+</div>
+
+<!-- CLOUD CONFIG OVERLAY -->
+<div class="overlay" id="overlay-cloud">
+  <div class="modal">
+    <div class="modal-head">
+      <h2><i class="ti ti-cloud"></i> Sincronización en la Nube</h2>
+      <button class="modal-close" onclick="cerrarModal('overlay-cloud')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="cloud-status-msg" class="cloud-status"></div>
+      <p style="margin:0 0 14px 0;font-size:13px;color:var(--gray);line-height:1.5">
+        Configura Firebase Firestore para sincronizar los datos entre varios usuarios en tiempo real.
+        <a href="https://console.firebase.google.com" target="_blank" style="color:var(--gold);">Crear proyecto Firebase (gratuito)</a>
+      </p>
+      <div class="cloud-config-grid">
+        <div class="fg">
+          <label>apiKey</label>
+          <input type="text" id="cfg-apikey" placeholder="AIzaSyB_gX589LOo7EtwpuXeKmvgcoEB230oPNc" />
+        </div>
+        <div class="fg">
+          <label>authDomain</label>
+          <input type="text" id="cfg-authdomain" placeholder="bitacora-3c384.firebaseapp.com" />
+        </div>
+        <div class="fg">
+          <label>projectId</label>
+          <input type="text" id="cfg-projectid" placeholder="bitacora-3c384" />
+        </div>
+        <div class="fg">
+          <label>storageBucket</label>
+          <input type="text" id="cfg-storagebucket" placeholder="bitacora-3c384.firebasestorage.app" />
+        </div>
+        <div class="fg">
+          <label>messagingSenderId</label>
+          <input type="text" id="cfg-msgsenderid" placeholder="281855224047" />
+        </div>
+        <div class="fg">
+          <label>appId</label>
+          <input type="text" id="cfg-appid" placeholder="1:281855224047:web:5a77a6504184ccce41531a" />
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="limpiarConfigNube()"><i class="ti ti-cloud-off"></i> Desconectar</button>
+        <button class="btn btn-primary" onclick="guardarConfigNube()"><i class="ti ti-cloud-check"></i> Conectar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER MANAGEMENT OVERLAY -->
+<div class="overlay" id="overlay-usermgmt">
+  <div class="modal">
+    <div class="modal-head">
+      <h2><i class="ti ti-users"></i> Administrar Usuarios</h2>
+      <button class="modal-close" onclick="cerrarModal('overlay-usermgmt')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin:0 0 14px 0;font-size:13px;color:var(--gray);line-height:1.5">
+        Agrega usuarios y asígnales roles. Los roles se sincronizan en la nube.
+      </p>
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:end">
+        <div class="fg" style="flex:1">
+          <label>Nombre de usuario</label>
+          <input type="text" id="user-mgmt-name" placeholder="Ej: Juan Pérez" />
+        </div>
+        <div class="fg" style="width:140px">
+          <label>Rol</label>
+          <select id="user-mgmt-role">
+            <option value="admin">Admin</option>
+            <option value="editor">Editor</option>
+            <option value="viewer">Visor</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="agregarUsuario()" style="white-space:nowrap"><i class="ti ti-plus"></i> Agregar</button>
+      </div>
+      <table class="user-table">
+        <thead><tr><th>Usuario</th><th>Rol</th><th></th></tr></thead>
+        <tbody id="user-mgmt-tbody"></tbody>
+      </table>
+      <div style="margin-top:14px;font-size:12px;color:var(--gray);display:flex;gap:16px">
+        <span><span class="role-badge role-admin" style="font-size:9px">Admin</span> — acceso total, puede administrar usuarios</span>
+        <span><span class="role-badge role-editor" style="font-size:9px">Editor</span> — puede crear y editar capacitaciones</span>
+        <span><span class="role-badge role-viewer" style="font-size:9px">Visor</span> — solo puede ver</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -702,6 +830,12 @@ body {
   <div class="topbar-actions">
     <button class="btn btn-ghost" onclick="exportCSV()"><i class="ti ti-table-export"></i> CSV</button>
     <button class="btn btn-ghost" onclick="abrirActaModal()"><i class="ti ti-file-certificate"></i> Acta PDF</button>
+    <button class="btn btn-ghost cloud-btn" id="btn-cloud-sync" onclick="abrirConfigNube()" title="Configurar sincronización en la nube"><i class="ti ti-cloud" id="cloud-icon"></i><span class="sync-dot" id="sync-dot"></span></button>
+    <div class="topbar-user" id="topbar-user">
+      <span class="user-badge" id="user-badge"></span>
+      <span class="role-badge" id="role-badge"></span>
+      <button class="btn btn-ghost" id="btn-user-mgmt" onclick="abrirUserMgmt()" title="Administrar usuarios" style="display:none"><i class="ti ti-users"></i></button>
+    </div>
     <button class="btn btn-gold" onclick="abrirNuevoEvento()"><i class="ti ti-plus"></i> Nueva Capacitación</button>
   </div>
 </div>
@@ -906,6 +1040,10 @@ body {
             <option>Técnico en Enfermería</option>
             <option>Digitador / Téc. Administrativo</option>
             <option>Jefe de Servicio</option><option>Director/a</option>
+            <option>Odontología</option>
+            <option>Administrativo</option>
+            <option>Ing. Ambiental</option>
+            <option>Ing. de Sistemas</option>
             <option>Otro</option>
           </select>
           <select id="p-estado">
@@ -1051,18 +1189,19 @@ let verEventoId = null;
 let participantesTemp = [];
 let mediasTemp = [];
 let selectedEventIds = new Set();
+let currentUser = null;     // { name, role }
+let usuarios = [];          // [{ name, role }]
 
 /* ═══════════════════ CRYPTO (AES-GCM + PBKDF2) ═══════════════════ */
 let dbKey = null;
+let encActual = null;   // { iv, data } último paquete cifrado
 const SALT_KEY = 'sihce_crypto_salt';
 
+const SALT_FIJO = btoa('sihce_bitacora_fixed_salt_2024');
+
 function obtenerSalt() {
-  let s = localStorage.getItem(SALT_KEY);
-  if (!s) {
-    s = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
-    localStorage.setItem(SALT_KEY, s);
-  }
-  return s;
+  // Fixed salt ensures same password = same key on any device
+  return SALT_FIJO;
 }
 
 async function derivarClave(password) {
@@ -1088,6 +1227,313 @@ async function descifrarVault(key, ivB64, dataB64) {
   const raw = Uint8Array.from(atob(dataB64), c => c.charCodeAt(0));
   const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, raw);
   return JSON.parse(new TextDecoder().decode(dec));
+}
+
+/* ═══════════════════ CLOUD SYNC (Firebase) ═══════════════════ */
+let firebaseApp = null;
+let firestoreDb = null;
+let cloudConfig = null;
+let unsubscribe = null;
+
+function cargarConfigNube() {
+  try {
+    const raw = localStorage.getItem('firebaseConfig');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function actualizarIconoSync(status) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + status;
+}
+
+function initFirebase(cfg) {
+  if (firebaseApp) {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    firebaseApp = null; firestoreDb = null;
+  }
+  try {
+    firebaseApp = firebase.initializeApp(cfg, 'bitacora');
+    firestoreDb = firebase.firestore(firebaseApp);
+    firestoreDb.settings({ merge: true });
+    return true;
+  } catch (e) {
+    console.error('Firebase init error:', e);
+    return false;
+  }
+}
+
+async function cloudSave(data) {
+  if (!firestoreDb) return;
+  try {
+    await firestoreDb.collection('bitacora').doc('vault').set({
+      data: data.data,
+      iv: data.iv,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  } catch (e) {
+    console.error('cloudSave error:', e);
+    actualizarIconoSync('disconnected');
+  }
+}
+
+async function cloudLoad() {
+  if (!firestoreDb) return null;
+  try {
+    const snap = await firestoreDb.collection('bitacora').doc('vault').get();
+    if (snap.exists) {
+      const d = snap.data();
+      if (d.data && d.iv) return { data: d.data, iv: d.iv };
+    }
+    return null;
+  } catch (e) {
+    console.error('cloudLoad error:', e);
+    actualizarIconoSync('disconnected');
+    return null;
+  }
+}
+
+function iniciarListener() {
+  if (!firestoreDb) return;
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  actualizarIconoSync('loading');
+  try {
+    unsubscribe = firestoreDb.collection('bitacora').doc('vault')
+      .onSnapshot(async (snap) => {
+        if (!snap.exists) { actualizarIconoSync('connected'); return; }
+        if (!dbKey) return;
+        const d = snap.data();
+        if (!d.data || !d.iv) { actualizarIconoSync('connected'); return; }
+        try {
+          const decData = await descifrarVault(dbKey, d.iv, d.data);
+          if (JSON.stringify(decData) !== JSON.stringify(eventos)) {
+            eventos = decData;
+            encActual = { iv: d.iv, data: d.data };
+            await dbPersistirLocal(d.iv, d.data);
+            renderAll();
+            toast('Datos sincronizados desde la nube');
+          }
+          actualizarIconoSync('connected');
+        } catch {
+          actualizarIconoSync('connected');
+        }
+      }, (err) => {
+        console.error('Firestore listener error:', err);
+        actualizarIconoSync('disconnected');
+      });
+  } catch (e) {
+    console.error('iniciarListener error:', e);
+    actualizarIconoSync('disconnected');
+  }
+}
+
+async function sincronizarUsuarios() {
+  usuarios = await cloudCargarUsuarios();
+  if (!currentUser) return;
+  const hayAdmin = usuarios.some(u => u.role === 'admin');
+  if (!hayAdmin) {
+    currentUser.role = 'admin';
+  } else {
+    currentUser.role = obtenerRolUsuario(currentUser.name);
+  }
+  actualizarBadgeUsuario();
+  if (!usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase())) {
+    usuarios.push({ name: currentUser.name, role: currentUser.role });
+    await cloudGuardarUsuarios(usuarios);
+  }
+}
+
+async function guardarConfigNube() {
+  const cfg = {
+    apiKey: document.getElementById('cfg-apikey').value.trim(),
+    authDomain: document.getElementById('cfg-authdomain').value.trim(),
+    projectId: document.getElementById('cfg-projectid').value.trim(),
+    storageBucket: document.getElementById('cfg-storagebucket').value.trim(),
+    messagingSenderId: document.getElementById('cfg-msgsenderid').value.trim(),
+    appId: document.getElementById('cfg-appid').value.trim(),
+  };
+  if (!cfg.apiKey || !cfg.projectId) {
+    mostrarEstadoNube('Completa apiKey y projectId al menos.', 'err');
+    return;
+  }
+  if (initFirebase(cfg)) {
+    localStorage.setItem('firebaseConfig', JSON.stringify(cfg));
+    cloudConfig = cfg;
+    mostrarEstadoNube('Conectado a Firebase Firestore correctamente.', 'ok');
+    actualizarIconoSync('loading');
+    await sincronizarUsuarios();
+    if (encActual) { cloudSave(encActual); }
+    iniciarListener();
+    cerrarModal('overlay-cloud');
+    toast('☁️ Sincronización en la nube activada');
+  } else {
+    mostrarEstadoNube('Error al inicializar Firebase. Verifica los datos.', 'err');
+  }
+}
+
+function limpiarConfigNube() {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  firebaseApp = null; firestoreDb = null; cloudConfig = null;
+  localStorage.removeItem('firebaseConfig');
+  document.querySelectorAll('#overlay-cloud input').forEach(i => i.value = '');
+  actualizarIconoSync('disconnected');
+  mostrarEstadoNube('');
+  toast('☁️ Sincronización en la nube desactivada');
+}
+
+function abrirConfigNube() {
+  if (!esAdmin()) { toast('Solo el administrador puede configurar la nube', 'err'); return; }
+  const cfg = cargarConfigNube();
+  if (cfg) {
+    document.getElementById('cfg-apikey').value = cfg.apiKey || '';
+    document.getElementById('cfg-authdomain').value = cfg.authDomain || '';
+    document.getElementById('cfg-projectid').value = cfg.projectId || '';
+    document.getElementById('cfg-storagebucket').value = cfg.storageBucket || '';
+    document.getElementById('cfg-msgsenderid').value = cfg.messagingSenderId || '';
+    document.getElementById('cfg-appid').value = cfg.appId || '';
+  }
+  document.getElementById('cloud-status-msg').innerHTML = '';
+  document.getElementById('cloud-status-msg').className = 'cloud-status';
+  document.getElementById('overlay-cloud').classList.add('open');
+}
+
+function mostrarEstadoNube(msg, tipo) {
+  const el = document.getElementById('cloud-status-msg');
+  if (!msg) { el.innerHTML = ''; el.className = 'cloud-status'; return; }
+  el.className = 'cloud-status ' + tipo;
+  el.innerHTML = msg;
+}
+
+// Añadir carga inicial de Firebase al arrancar (después de iniciar sesión)
+async function conectarNubeSiConfigurada() {
+  const cfg = cargarConfigNube();
+  if (!cfg) { actualizarIconoSync('disconnected'); return; }
+  if (initFirebase(cfg)) {
+    cloudConfig = cfg;
+    await sincronizarUsuarios();
+    // Intentar cargar datos desde la nube primero
+    const cloudData = await cloudLoad();
+    if (cloudData && dbKey) {
+      try {
+        const decData = await descifrarVault(dbKey, cloudData.iv, cloudData.data);
+        if (decData && decData.length !== undefined) {
+          eventos = decData;
+          encActual = cloudData;
+          await dbPersistirLocal(cloudData.iv, cloudData.data);
+          renderAll();
+        }
+      } catch (e) {
+        console.log('No se pudieron cargar datos de la nube, usando locales');
+      }
+    }
+    iniciarListener();
+  } else {
+    actualizarIconoSync('disconnected');
+  }
+}
+
+/* ═══════════════════ ROLES Y USUARIOS ═══════════════════ */
+function usuarioTieneRol(rolesPermitidos) {
+  if (!currentUser) return false;
+  return rolesPermitidos.includes(currentUser.role);
+}
+
+function esAdmin() { return currentUser && currentUser.role === 'admin'; }
+function esEditor() { return currentUser && (currentUser.role === 'admin' || currentUser.role === 'editor'); }
+function esVisor() { return currentUser && currentUser.role === 'viewer'; }
+
+function actualizarBadgeUsuario() {
+  const badge = document.getElementById('user-badge');
+  const roleEl = document.getElementById('role-badge');
+  const cloudBtn = document.getElementById('btn-cloud-sync');
+  if (currentUser) {
+    badge.textContent = currentUser.name;
+    roleEl.textContent = currentUser.role;
+    roleEl.className = 'role-badge role-' + currentUser.role;
+    const admin = esAdmin();
+    document.getElementById('btn-user-mgmt').style.display = admin ? '' : 'none';
+    // Cloud button: visible for all if not configured yet, or only for admin
+    if (cloudBtn) {
+      const configurado = !!cargarConfigNube();
+      cloudBtn.style.display = (!configurado || admin) ? '' : 'none';
+    }
+  }
+}
+
+async function cloudCargarUsuarios() {
+  if (!firestoreDb) return [];
+  try {
+    const snap = await firestoreDb.collection('bitacora').doc('usuarios').get();
+    if (snap.exists) return snap.data().lista || [];
+    return [];
+  } catch { return []; }
+}
+
+async function cloudGuardarUsuarios(lista) {
+  if (!firestoreDb || !esAdmin()) return;
+  try {
+    await firestoreDb.collection('bitacora').doc('usuarios').set({ lista }, { merge: true });
+  } catch (e) { console.error('Error guardando usuarios:', e); }
+}
+
+function obtenerRolUsuario(username) {
+  const u = usuarios.find(x => x.name.toLowerCase() === username.toLowerCase());
+  return u ? u.role : 'editor';  // default role
+}
+
+function renderUserMgmt() {
+  const tbody = document.getElementById('user-mgmt-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = usuarios.map(u => `
+    <tr>
+      <td><strong>${escHtml(u.name)}</strong></td>
+      <td>
+        <select class="user-role-select" data-user="${escHtml(u.name)}" onchange="cambiarRolUsuario('${escHtml(u.name)}', this.value)">
+          <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+          <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
+          <option value="viewer" ${u.role==='viewer'?'selected':''}>Visor</option>
+        </select>
+      </td>
+      <td>${u.name !== currentUser?.name ? `<button class="btn btn-danger btn-sm" onclick="eliminarUsuario('${escHtml(u.name)}')"><i class="ti ti-trash"></i></button>` : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function abrirUserMgmt() {
+  renderUserMgmt();
+  document.getElementById('user-mgmt-name').value = '';
+  document.getElementById('user-mgmt-role').value = 'editor';
+  document.getElementById('overlay-usermgmt').classList.add('open');
+}
+
+function agregarUsuario() {
+  const name = document.getElementById('user-mgmt-name').value.trim();
+  const role = document.getElementById('user-mgmt-role').value;
+  if (!name) { toast('Ingresa un nombre de usuario', 'err'); return; }
+  if (usuarios.some(u => u.name.toLowerCase() === name.toLowerCase())) {
+    toast('El usuario ya existe', 'err'); return;
+  }
+  usuarios.push({ name, role });
+  renderUserMgmt();
+  cloudGuardarUsuarios(usuarios);
+  toast('Usuario ' + name + ' agregado como ' + role);
+  document.getElementById('user-mgmt-name').value = '';
+}
+
+function cambiarRolUsuario(name, newRole) {
+  const u = usuarios.find(x => x.name === name);
+  if (u) { u.role = newRole; cloudGuardarUsuarios(usuarios); }
+}
+
+function eliminarUsuario(name) {
+  if (name === currentUser?.name) { toast('No puedes eliminarte a ti mismo', 'err'); return; }
+  usuarios = usuarios.filter(u => u.name !== name);
+  renderUserMgmt();
+  cloudGuardarUsuarios(usuarios);
+  toast('Usuario ' + name + ' eliminado');
 }
 
 /* ═══════════════════ INDEXED DB (cifrado) ═══════════════════ */
@@ -1117,38 +1563,77 @@ function dbCargar() {
   }));
 }
 
-function dbPersistir() {
+function dbPersistirLocal(iv, data) {
   if (!dbKey) return Promise.resolve();
-  return cifrarVault(dbKey, eventos).then(pkg => dbOpen().then(db => new Promise((res, rej) => {
+  const pkg = { iv, data };
+  return dbOpen().then(db => new Promise((res, rej) => {
     const tx = db.transaction(DB_STORE, 'readwrite');
     tx.objectStore(DB_STORE).put({ id: 'eventos', iv: pkg.iv, data: pkg.data });
     tx.oncomplete = () => { res(); db.close(); };
     tx.onerror = e => { rej(e.target.error); db.close(); };
-  })));
+  }));
+}
+
+function dbPersistir() {
+  if (!dbKey) return Promise.resolve();
+  return cifrarVault(dbKey, eventos).then(pkg => {
+    encActual = pkg;
+    return dbPersistirLocal(pkg.iv, pkg.data).then(() => {
+      if (firestoreDb) { cloudSave(pkg); }
+    });
+  });
 }
 
 /* ═══════════════════ LOGIN ═══════════════════ */
 async function handleLogin() {
   const pw = document.getElementById('login-password').value.trim();
-  if (!pw) return;
+  const username = document.getElementById('login-username').value.trim();
+  if (!pw || !username) return;
   const btn = document.getElementById('login-btn');
   const errEl = document.getElementById('login-error');
   btn.disabled = true; btn.textContent = 'Verificando…';
   errEl.style.display = 'none';
   try {
-    const key = await derivarClave(pw);
+    let key = await derivarClave(pw);
     const record = await dbCargar();
+    let migrado = false;
     if (record) {
-      const data = await descifrarVault(key, record.iv, record.data);
-      eventos = data;
+      try {
+        const data = await descifrarVault(key, record.iv, record.data);
+        eventos = data;
+      } catch {
+        const oldSaltB64 = localStorage.getItem(SALT_KEY);
+        if (oldSaltB64 && oldSaltB64 !== SALT_FIJO) {
+          const oldKey = await derivarClaveConSalt(pw, oldSaltB64);
+          try {
+            const data = await descifrarVault(oldKey, record.iv, record.data);
+            eventos = data;
+            key = oldKey;
+            migrado = true;
+            localStorage.setItem(SALT_KEY, SALT_FIJO);
+          } catch { throw new Error('wrong password'); }
+        } else {
+          throw new Error('wrong password');
+        }
+      }
     } else {
       document.getElementById('login-warning').style.display = 'block';
     }
     dbKey = key;
+    localStorage.setItem('bitacora_username', username);
+    currentUser = { name: username, role: 'editor' };
     document.getElementById('overlay-login').classList.remove('open');
     document.getElementById('login-password').value = '';
     renderAll();
+    actualizarBadgeUsuario();
+    conectarNubeSiConfigurada();
+    if (migrado) {
+      dbKey = await derivarClave(pw);
+      await dbPersistir();
+      toast('Datos migrados al nuevo sistema de sincronización');
+    }
   } catch (e) {
+    if (e.message !== 'wrong password') console.error(e);
     errEl.textContent = 'Contraseña incorrecta';
     errEl.style.display = 'block';
     document.getElementById('login-password').value = '';
@@ -1157,10 +1642,27 @@ async function handleLogin() {
   }
 }
 
+async function derivarClaveConSalt(password, saltB64) {
+  const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+  const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
 function cerrarSesion() {
   eventos = [];
   dbKey = null;
+  encActual = null;
   selectedEventIds.clear();
+  currentUser = null;
+  usuarios = [];
+  document.getElementById('user-badge').textContent = '';
+  document.getElementById('role-badge').textContent = '';
   document.getElementById('overlay-login').classList.add('open');
   document.getElementById('login-password').value = '';
   document.getElementById('login-password').focus();
@@ -1248,6 +1750,7 @@ function actualizarBarraSeleccion() {
   allCheck.indeterminate = n > 0 && n < total;
 }
 function eliminarSeleccionados() {
+  if (!esEditor()) { toast('Solo editores y administradores pueden eliminar', 'err'); return; }
   if (!selectedEventIds.size) return;
   const n = selectedEventIds.size;
   if (!confirm(`¿Eliminar ${n} capacitac${n === 1 ? 'ión' : 'iones'} seleccionada${n === 1 ? '' : 's'}?`)) return;
@@ -1499,6 +2002,7 @@ function updateStats() {
 
 /* ═══════════════════ NUEVO / EDITAR EVENTO ═══════════════════ */
 function abrirNuevoEvento(fecha = null) {
+  if (!esEditor()) { toast('Solo los editores y administradores pueden crear capacitaciones', 'err'); return; }
   editingId = null;
   participantesTemp = [];
   mediasTemp = [];
@@ -1516,6 +2020,7 @@ function abrirNuevoEvento(fecha = null) {
 }
 
 function editarEvento(id) {
+  if (!esEditor()) { toast('Solo los editores y administradores pueden editar capacitaciones', 'err'); return; }
   const ev = eventos.find(e => e.id === id);
   if (!ev) return;
   editingId = id;
@@ -1809,6 +2314,7 @@ function generarActaEvento() {
 }
 
 function eliminarEvento(id) {
+  if (!esEditor()) { toast('Solo editores y administradores pueden eliminar', 'err'); return; }
   const ev = eventos.find(e=>e.id===id);
   if (!ev) return;
   if (!confirm(`¿Eliminar "${ev.titulo}"?`)) return;
@@ -2315,7 +2821,11 @@ function exportCSV() {
 
 /* ═══════════════════ HELPERS ═══════════════════ */
 function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
-document.addEventListener('keydown', e => { if (e.key==='Escape' && !document.getElementById('overlay-login').classList.contains('open')) { ['overlay-evento','overlay-ver','overlay-acta'].forEach(id=>{document.getElementById(id).classList.remove('open');}); document.getElementById('lightbox').classList.remove('open'); } });
+document.addEventListener('keydown', e => { if (e.key==='Escape' && !document.getElementById('overlay-login').classList.contains('open')) { ['overlay-evento','overlay-ver','overlay-acta','overlay-usermgmt'].forEach(id=>{document.getElementById(id).classList.remove('open');}); document.getElementById('lightbox').classList.remove('open'); } });
+// Auto-fill username from localStorage
+const savedUser = localStorage.getItem('bitacora_username');
+if (savedUser) document.getElementById('login-username').value = savedUser;
+if (document.getElementById('login-username').value) document.getElementById('login-password').focus();
 </script>
 </body>
 </html>
