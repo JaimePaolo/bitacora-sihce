@@ -1661,12 +1661,18 @@ async function handleLogin() {
     dbKey = key;
     localStorage.setItem('bitacora_username', username);
     currentUser = { name: username, role: 'editor' };
-    // Conectar a la nube y obtener el rol antes de mostrar la UI
-    await conectarNubeSiConfigurada();
+    // Obtener el rol desde la nube/caché antes de mostrar la UI
+    const cfg = cargarConfigNube();
+    if (cfg && initFirebase(cfg)) {
+      await sincronizarUsuarios();
+      currentUser.role = obtenerRolUsuario(currentUser.name);
+    }
     document.getElementById('overlay-login').classList.remove('open');
     document.getElementById('login-password').value = '';
     renderAll();
     actualizarBadgeUsuario();
+    // Conectar a la nube para sincronización en tiempo real (asíncrono, no bloquea)
+    if (cfg) conectarNubeSiConfigurada();
     if (migrado) {
       dbKey = await derivarClave(pw);
       await dbPersistir();
