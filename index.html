@@ -712,6 +712,12 @@ body {
 .user-table td:last-child { text-align:right; }
 .user-table .user-role-select { font-size:12px;padding:4px 6px;border-radius:4px;border:1px solid var(--border); }
 
+/* ── COLOR PICKER ── */
+.color-picker { display:flex;gap:6px;flex-wrap:wrap;padding:4px 0; }
+.color-swatch { width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color .15s; }
+.color-swatch:hover { border-color:var(--border); }
+.color-swatch.sel { border-color:var(--navy);box-shadow:0 0 0 2px white,0 0 0 4px var(--navy); }
+
 </style>
 </head>
 <body>
@@ -990,6 +996,19 @@ body {
               <option value="virtual">Virtual (Zoom / Teams)</option>
               <option value="hibrida">Híbrida</option>
             </select>
+          </div>
+          <div class="fg">
+            <label>Color</label>
+            <div class="color-picker" id="ev-color">
+              <div class="color-swatch sel" data-color="#3b82f6" style="background:#3b82f6" title="Azul"></div>
+              <div class="color-swatch" data-color="#ef4444" style="background:#ef4444" title="Rojo"></div>
+              <div class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Ámbar"></div>
+              <div class="color-swatch" data-color="#22c55e" style="background:#22c55e" title="Verde"></div>
+              <div class="color-swatch" data-color="#14b8a6" style="background:#14b8a6" title="Teal"></div>
+              <div class="color-swatch" data-color="#8b5cf6" style="background:#8b5cf6" title="Púrpura"></div>
+              <div class="color-swatch" data-color="#ec4899" style="background:#ec4899" title="Rosa"></div>
+              <div class="color-swatch" data-color="#f97316" style="background:#f97316" title="Naranja"></div>
+            </div>
           </div>
           <div class="fg">
             <label>Hora inicio</label>
@@ -1907,7 +1926,9 @@ function renderMainCal() {
     const showMax = 3;
     dayEvs.slice(0, showMax).forEach(ev => {
       const pill = document.createElement('div');
+      const c = ev.color || '#3b82f6';
       pill.className = `cal-event-pill ${modalColor[ev.modalidad] || 'pill-presencial'}`;
+      pill.style.borderLeft = `3px solid ${c}`;
       // Show multi-day indicator
       const isFirst = ev.fechaIni === dateStr;
       const isLast = ev.fechaFin === dateStr;
@@ -1962,7 +1983,8 @@ function renderListView() {
       ? `<div class="d" style="font-size:16px">${parseInt(d)}–${parseInt(d2)}</div><div class="m">${M[parseInt(m)-1]}${m!==m2?'–'+M[parseInt(m2)-1]:''}<br>${y}</div>`
       : `<div class="d">${parseInt(d)}</div><div class="m">${M[parseInt(m)-1]}<br>${y}</div>`;
     const checked = selectedEventIds.has(ev.id) ? 'checked' : '';
-    return `<div class="list-event" data-id="${ev.id}">
+    const evColor = ev.color || '#3b82f6';
+    return `<div class="list-event" style="border-left:4px solid ${evColor}" data-id="${ev.id}">
       <div style="display:flex;align-items:center;padding-right:6px;" onclick="event.stopPropagation()">
         <input type="checkbox" class="ev-check" data-id="${ev.id}" ${checked} onchange="marcarEvento('${ev.id}',this.checked)">
       </div>
@@ -2045,6 +2067,7 @@ function editarEvento(id) {
   document.getElementById('ev-metodologia').value = ev.metodologia || '';
   document.getElementById('ev-compromisos').value = ev.compromisos || '';
   document.getElementById('ev-obs').value = ev.obs || '';
+  seleccionarColor(ev.color || '#3b82f6');
   switchMTab('info');
   renderPartTabla();
   renderMediaGrid();
@@ -2062,6 +2085,7 @@ function limpiarFormEvento() {
   document.getElementById('ev-fecha-ini').value = hoy;
   document.getElementById('ev-fecha-fin').value = hoy;
   document.getElementById('dias-seleccionados-wrap').style.display = 'none';
+  seleccionarColor('#3b82f6');
 }
 
 function guardarEvento() {
@@ -2091,6 +2115,7 @@ function guardarEvento() {
     obs: document.getElementById('ev-obs').value.trim(),
     participantes: participantesTemp,
     medias: mediasTemp,
+    color: obtenerColorSeleccionado(),
   };
   if (editingId) {
     const idx = eventos.findIndex(e => e.id === editingId);
@@ -2826,6 +2851,20 @@ document.addEventListener('keydown', e => { if (e.key==='Escape' && !document.ge
 const savedUser = localStorage.getItem('bitacora_username');
 if (savedUser) document.getElementById('login-username').value = savedUser;
 if (document.getElementById('login-username').value) document.getElementById('login-password').focus();
+// Color picker
+function seleccionarColor(color) {
+  document.querySelectorAll('#ev-color .color-swatch').forEach(el => {
+    el.classList.toggle('sel', el.dataset.color === color);
+  });
+}
+function obtenerColorSeleccionado() {
+  const sel = document.querySelector('#ev-color .color-swatch.sel');
+  return sel ? sel.dataset.color : '#3b82f6';
+}
+document.addEventListener('click', e => {
+  const swatch = e.target.closest('#ev-color .color-swatch');
+  if (swatch) seleccionarColor(swatch.dataset.color);
+});
 </script>
 </body>
 </html>
