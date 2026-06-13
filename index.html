@@ -1268,11 +1268,10 @@ function actualizarIconoSync(status) {
 }
 
 function initFirebase(cfg) {
-  if (firebaseApp) return true;
   try {
-    firebaseApp = firebase.initializeApp(cfg, 'bitacora');
+    if (!firebaseApp) firebaseApp = firebase.initializeApp(cfg, 'bitacora');
     firestoreDb = firebase.firestore(firebaseApp);
-    firestoreDb.settings({ merge: true });
+    try { firestoreDb.settings({ merge: true }); } catch {}
     return true;
   } catch (e) {
     console.error('Firebase init error:', e);
@@ -1366,11 +1365,11 @@ async function sincronizarUsuarios() {
   } else {
     // Nube falló, no hay admin en caché → usar último rol conocido
     const saved = localStorage.getItem('bitacora_role_' + currentUser.name);
-    if (saved) currentUser.role = saved;
+    if (saved === 'admin' || saved === 'editor') currentUser.role = saved;
   }
   
-  // Guardar rol si la nube respondió o si no había ninguno antes
-  if (listaNube !== null || !localStorage.getItem('bitacora_role_' + currentUser.name)) {
+  // Guardar rol solo si es válido y la nube respondió
+  if ((currentUser.role === 'admin' || currentUser.role === 'editor') && listaNube !== null) {
     localStorage.setItem('bitacora_role_' + currentUser.name, currentUser.role);
   }
   
@@ -1669,17 +1668,14 @@ async function handleLogin() {
     }
     dbKey = key;
     localStorage.setItem('bitacora_username', username);
-    // Obtener rol de localStorage (solo se guarda cuando la nube confirma)
-    // o 'admin' si no hay nube configurada
-    const savedRole = localStorage.getItem('bitacora_role_' + username);
-    const noCloud = !cargarConfigNube();
-    currentUser = { name: username, role: savedRole || (noCloud ? 'admin' : 'editor') };
+    // Obtener rol de localStorage (validar que sea admin o editor)
+    currentUser = { name: username, role: 'editor' };
+    // Conectar a la nube (determina el rol correcto) antes de mostrar la UI
+    await conectarNubeSiConfigurada();
     document.getElementById('overlay-login').classList.remove('open');
     document.getElementById('login-password').value = '';
     renderAll();
     actualizarBadgeUsuario();
-    // Conectar a la nube para sincronización (asíncrono, actualiza el rol si cambió)
-    conectarNubeSiConfigurada();
     if (migrado) {
       dbKey = await derivarClave(pw);
       await dbPersistir();
@@ -1721,7 +1717,6 @@ function cerrarSesion() {
   document.getElementById('login-password').focus();
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('login-warning').style.display = 'none';
-  // Detener listener pero mantener la app Firebase (se reusa al reiniciar)
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
   renderAll();
 }
