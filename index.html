@@ -1268,10 +1268,7 @@ function actualizarIconoSync(status) {
 }
 
 function initFirebase(cfg) {
-  if (firebaseApp) {
-    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-    firebaseApp = null; firestoreDb = null;
-  }
+  if (firebaseApp) return true;
   try {
     firebaseApp = firebase.initializeApp(cfg, 'bitacora');
     firestoreDb = firebase.firestore(firebaseApp);
