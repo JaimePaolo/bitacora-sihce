@@ -1360,11 +1360,14 @@ async function sincronizarUsuarios() {
     if (cache) { try { usuarios = JSON.parse(cache); } catch {} }
   }
   const hayAdmin = usuarios.some(u => u.role === 'admin');
-  if (!hayAdmin) {
+  if (listaNube !== null && !hayAdmin) {
+    // Carga exitosa desde la nube y no hay admin → el primero es admin
     currentUser.role = 'admin';
-  } else {
+  } else if (hayAdmin) {
+    // Ya hay admin → usar el rol de la lista
     currentUser.role = obtenerRolUsuario(currentUser.name);
   }
+  // Si listaNube es null (error de conexión), mantener el rol original (editor)
   actualizarBadgeUsuario();
   // Solo guardar en nube si la carga fue exitosa y el usuario falta en la lista
   if (listaNube !== null && !usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase())) {
