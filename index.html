@@ -1348,8 +1348,10 @@ function iniciarListener() {
 }
 
 async function sincronizarUsuarios() {
-  usuarios = await cloudCargarUsuarios();
+  const listaNube = await cloudCargarUsuarios();
   if (!currentUser) return;
+  // Si la carga falló (null), mantener la lista actual sin sobrescribir
+  if (listaNube !== null) usuarios = listaNube;
   const hayAdmin = usuarios.some(u => u.role === 'admin');
   if (!hayAdmin) {
     currentUser.role = 'admin';
@@ -1357,7 +1359,8 @@ async function sincronizarUsuarios() {
     currentUser.role = obtenerRolUsuario(currentUser.name);
   }
   actualizarBadgeUsuario();
-  if (!usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase())) {
+  // Solo guardar si hay conexión real y el usuario no está ya en la lista
+  if (firestoreDb && !usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase())) {
     usuarios.push({ name: currentUser.name, role: currentUser.role });
     await cloudGuardarUsuarios(usuarios);
   }
@@ -1481,12 +1484,12 @@ function actualizarBadgeUsuario() {
 }
 
 async function cloudCargarUsuarios() {
-  if (!firestoreDb) return [];
+  if (!firestoreDb) return null;  // null = no se pudo conectar
   try {
     const snap = await firestoreDb.collection('bitacora').doc('usuarios').get();
     if (snap.exists) return snap.data().lista || [];
-    return [];
-  } catch { return []; }
+    return [];  // existe el doc pero está vacío
+  } catch { return null; }  // error de red/Firebase
 }
 
 async function cloudGuardarUsuarios(lista) {
@@ -1687,6 +1690,11 @@ function cerrarSesion() {
   document.getElementById('login-password').focus();
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('login-warning').style.display = 'none';
+  // Limpiar Firebase para que reconecte limpio al próximo inicio
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  try { if (firebaseApp) firebase.app('bitacora').delete(); } catch {}
+  firebaseApp = null;
+  firestoreDb = null;
   renderAll();
 }
 
