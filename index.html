@@ -1661,11 +1661,12 @@ async function handleLogin() {
     dbKey = key;
     localStorage.setItem('bitacora_username', username);
     currentUser = { name: username, role: 'editor' };
+    // Conectar a la nube y obtener el rol antes de mostrar la UI
+    await conectarNubeSiConfigurada();
     document.getElementById('overlay-login').classList.remove('open');
     document.getElementById('login-password').value = '';
     renderAll();
     actualizarBadgeUsuario();
-    conectarNubeSiConfigurada();
     if (migrado) {
       dbKey = await derivarClave(pw);
       await dbPersistir();
