@@ -1350,31 +1350,42 @@ function iniciarListener() {
 async function sincronizarUsuarios() {
   const listaNube = await cloudCargarUsuarios();
   if (!currentUser) return;
-  // Si la nube respondió, usar esa lista y guardar respaldo local
+  // Cargar lista desde la nube o desde caché local
   if (listaNube !== null) {
     usuarios = listaNube;
     localStorage.setItem('bitacora_usuarios_cache', JSON.stringify(usuarios));
   } else {
-    // Si la nube falló, usar respaldo local (si existe)
     const cache = localStorage.getItem('bitacora_usuarios_cache');
     if (cache) { try { usuarios = JSON.parse(cache); } catch {} }
   }
+  
   const hayAdmin = usuarios.some(u => u.role === 'admin');
-  if (listaNube !== null && !hayAdmin) {
-    currentUser.role = 'admin';
-  } else if (hayAdmin) {
+  
+  if (hayAdmin) {
     currentUser.role = obtenerRolUsuario(currentUser.name);
+  } else if (listaNube !== null) {
+    // Nube respondió y no hay admin → este usuario es el admin
+    currentUser.role = 'admin';
+  } else {
+    // Nube falló, no hay admin en caché → usar último rol conocido
+    const saved = localStorage.getItem('bitacora_role_' + currentUser.name);
+    if (saved) currentUser.role = saved;
   }
-  // Solo guardar rol en localStorage si la nube respondió (es un dato confiable)
-  if (listaNube !== null) {
+  
+  // Guardar rol si la nube respondió o si no había ninguno antes
+  if (listaNube !== null || !localStorage.getItem('bitacora_role_' + currentUser.name)) {
     localStorage.setItem('bitacora_role_' + currentUser.name, currentUser.role);
   }
   
   actualizarBadgeUsuario();
-  // Solo guardar en nube si la carga fue exitosa y el usuario falta en la lista
-  if (listaNube !== null && !usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase())) {
+  
+  // Asegurar que el usuario actual esté en la lista (tanto en nube como en caché)
+  const userInList = usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase());
+  if (!userInList) {
     usuarios.push({ name: currentUser.name, role: currentUser.role });
-    localStorage.setItem('bitacora_usuarios_cache', JSON.stringify(usuarios));
+  }
+  localStorage.setItem('bitacora_usuarios_cache', JSON.stringify(usuarios));
+  if (listaNube !== null) {
     await cloudGuardarUsuarios(usuarios);
   }
 }
@@ -1661,11 +1672,17 @@ async function handleLogin() {
     dbKey = key;
     localStorage.setItem('bitacora_username', username);
     currentUser = { name: username, role: 'editor' };
-    // Obtener el rol desde la nube/caché antes de mostrar la UI
+    // Obtener el rol desde la nube/caché/localStorage antes de mostrar la UI
     const cfg = cargarConfigNube();
     if (cfg && initFirebase(cfg)) {
       await sincronizarUsuarios();
-      currentUser.role = obtenerRolUsuario(currentUser.name);
+    } else if (!cfg) {
+      // Sin nube configurada → usuario único, es admin
+      currentUser.role = 'admin';
+    } else {
+      // Firebase no pudo inicializar → usar último rol conocido
+      const saved = localStorage.getItem('bitacora_role_' + username);
+      if (saved) currentUser.role = saved;
     }
     document.getElementById('overlay-login').classList.remove('open');
     document.getElementById('login-password').value = '';
