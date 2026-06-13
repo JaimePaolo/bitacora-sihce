@@ -1361,13 +1361,13 @@ async function sincronizarUsuarios() {
   }
   const hayAdmin = usuarios.some(u => u.role === 'admin');
   if (listaNube !== null && !hayAdmin) {
-    // Carga exitosa desde la nube y no hay admin → el primero es admin
     currentUser.role = 'admin';
   } else if (hayAdmin) {
-    // Ya hay admin → usar el rol de la lista
     currentUser.role = obtenerRolUsuario(currentUser.name);
   }
-  // Si listaNube es null (error de conexión), mantener el rol original (editor)
+  // Guardar rol en localStorage como respaldo
+  localStorage.setItem('bitacora_role_' + currentUser.name, currentUser.role);
+  
   actualizarBadgeUsuario();
   // Solo guardar en nube si la carga fue exitosa y el usuario falta en la lista
   if (listaNube !== null && !usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase())) {
@@ -1658,7 +1658,8 @@ async function handleLogin() {
     }
     dbKey = key;
     localStorage.setItem('bitacora_username', username);
-    currentUser = { name: username, role: 'editor' };
+    const savedRole = localStorage.getItem('bitacora_role_' + username);
+    currentUser = { name: username, role: savedRole || 'editor' };
     document.getElementById('overlay-login').classList.remove('open');
     document.getElementById('login-password').value = '';
     renderAll();
@@ -1705,11 +1706,8 @@ function cerrarSesion() {
   document.getElementById('login-password').focus();
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('login-warning').style.display = 'none';
-  // Limpiar Firebase para que reconecte limpio al próximo inicio
+  // Detener listener pero mantener la app Firebase (se reusa al reiniciar)
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  try { if (firebaseApp) firebase.app('bitacora').delete(); } catch {}
-  firebaseApp = null;
-  firestoreDb = null;
   renderAll();
 }
 
