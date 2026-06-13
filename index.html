@@ -1365,8 +1365,10 @@ async function sincronizarUsuarios() {
   } else if (hayAdmin) {
     currentUser.role = obtenerRolUsuario(currentUser.name);
   }
-  // Guardar rol en localStorage como respaldo
-  localStorage.setItem('bitacora_role_' + currentUser.name, currentUser.role);
+  // Solo guardar rol en localStorage si la nube respondió (es un dato confiable)
+  if (listaNube !== null) {
+    localStorage.setItem('bitacora_role_' + currentUser.name, currentUser.role);
+  }
   
   actualizarBadgeUsuario();
   // Solo guardar en nube si la carga fue exitosa y el usuario falta en la lista
@@ -1658,8 +1660,7 @@ async function handleLogin() {
     }
     dbKey = key;
     localStorage.setItem('bitacora_username', username);
-    const savedRole = localStorage.getItem('bitacora_role_' + username);
-    currentUser = { name: username, role: savedRole || 'editor' };
+    currentUser = { name: username, role: 'editor' };
     document.getElementById('overlay-login').classList.remove('open');
     document.getElementById('login-password').value = '';
     renderAll();
