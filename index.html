@@ -1350,8 +1350,15 @@ function iniciarListener() {
 async function sincronizarUsuarios() {
   const listaNube = await cloudCargarUsuarios();
   if (!currentUser) return;
-  // Si la carga falló (null), mantener la lista actual sin sobrescribir
-  if (listaNube !== null) usuarios = listaNube;
+  // Si la nube respondió, usar esa lista y guardar respaldo local
+  if (listaNube !== null) {
+    usuarios = listaNube;
+    localStorage.setItem('bitacora_usuarios_cache', JSON.stringify(usuarios));
+  } else {
+    // Si la nube falló, usar respaldo local (si existe)
+    const cache = localStorage.getItem('bitacora_usuarios_cache');
+    if (cache) { try { usuarios = JSON.parse(cache); } catch {} }
+  }
   const hayAdmin = usuarios.some(u => u.role === 'admin');
   if (!hayAdmin) {
     currentUser.role = 'admin';
@@ -1359,9 +1366,10 @@ async function sincronizarUsuarios() {
     currentUser.role = obtenerRolUsuario(currentUser.name);
   }
   actualizarBadgeUsuario();
-  // Solo guardar si hay conexión real y el usuario no está ya en la lista
-  if (firestoreDb && !usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase())) {
+  // Solo guardar en nube si la carga fue exitosa y el usuario falta en la lista
+  if (listaNube !== null && !usuarios.some(u => u.name.toLowerCase() === currentUser.name.toLowerCase())) {
     usuarios.push({ name: currentUser.name, role: currentUser.role });
+    localStorage.setItem('bitacora_usuarios_cache', JSON.stringify(usuarios));
     await cloudGuardarUsuarios(usuarios);
   }
 }
@@ -1524,6 +1532,8 @@ function renderUserMgmt() {
 
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+function guardarCacheUsuarios() { localStorage.setItem('bitacora_usuarios_cache', JSON.stringify(usuarios)); }
+
 function abrirUserMgmt() {
   renderUserMgmt();
   document.getElementById('user-mgmt-name').value = '';
@@ -1540,6 +1550,7 @@ function agregarUsuario() {
   }
   usuarios.push({ name, role });
   renderUserMgmt();
+  guardarCacheUsuarios();
   cloudGuardarUsuarios(usuarios);
   toast('Usuario ' + name + ' agregado como ' + role);
   document.getElementById('user-mgmt-name').value = '';
@@ -1547,13 +1558,14 @@ function agregarUsuario() {
 
 function cambiarRolUsuario(name, newRole) {
   const u = usuarios.find(x => x.name === name);
-  if (u) { u.role = newRole; cloudGuardarUsuarios(usuarios); }
+  if (u) { u.role = newRole; guardarCacheUsuarios(); cloudGuardarUsuarios(usuarios); }
 }
 
 function eliminarUsuario(name) {
   if (name === currentUser?.name) { toast('No puedes eliminarte a ti mismo', 'err'); return; }
   usuarios = usuarios.filter(u => u.name !== name);
   renderUserMgmt();
+  guardarCacheUsuarios();
   cloudGuardarUsuarios(usuarios);
   toast('Usuario ' + name + ' eliminado');
 }
